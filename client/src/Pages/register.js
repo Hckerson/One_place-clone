@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import axios from "axios";
 import "./Styles/login.css";
+import clsx from  'clsx' 
 
 export default function Register() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [exist, setExist] = useState(false);
   const [email, setEmail] = useState("");
 
   const register = async () => {
@@ -22,6 +24,13 @@ export default function Register() {
         window.location.href = '/'
       }else if(response.data.message === "User already exists") {
         setEmail('User already exists')
+        setExist(true)
+        const id =setTimeout(() => {
+          setExist(false)
+          setEmail('')
+        }, 3000);
+
+        return () => clearTimeout(id)
       }else{
         window.location.href = '/register'
       }
@@ -88,7 +97,7 @@ export default function Register() {
       </div>
       <a
         href="/login"
-        className="absolute right-5 bottom-5 rounded-lg bg-stone-200 px-3 py-1 font-semibold underline underline-offset-2 decoration-black decoration-1 hover:decoration-stone-200 transition-colors duration-200 ease-in-out"
+        className={clsx('absolute right-5 bottom-5 rounded-lg bg-stone-200 px-3 py-1 font-semibold underline underline-offset-2 decoration-black decoration-1 hover:decoration-stone-200  duration-200 ease-in-out animate__animated transition-all', exist && 'animate__bounce' )}
       >
         <span className="text-sm font-normal">Already have an account?</span>
         Login

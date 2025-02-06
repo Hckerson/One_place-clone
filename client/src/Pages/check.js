@@ -1,41 +1,3 @@
-import React, { useState, useEffect, useContext } from "react";
-import { Link } from "react-router-dom";
-import axios from "axios";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-import "./Styles/homepage.css";
-import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
-import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
-import SupervisorAccountRoundedIcon from "@mui/icons-material/SupervisorAccountRounded";
-import EventNoteRoundedIcon from "@mui/icons-material/EventNoteRounded";
-import ContentPasteRoundedIcon from "@mui/icons-material/ContentPasteRounded";
-
-function Homepage() {
-  const [dashboardData, setDashboardData] = useState({});
-
-  useEffect(() => {
-    const fetchData = async()=>{
-      const result = await axios.get('http://localhost:5000/dashboard_data', { withCredentials: true });
-      if (result.data){
-        setDashboardData({...result.data});
-      }
-    }
-    fetchData()
-
-  }, []);
-
-  useEffect(() => {
-    // console.log("Updated dashboardData:", dashboardData); // ✅ Logs AFTER state updates
-  }, [dashboardData]); 
-
   const TopPanel = () => {
     const todaysDate = new Date().getTime();
     const historyDateRange = (days) => {
@@ -47,9 +9,40 @@ function Homepage() {
     const [changedDate, setChangedDate] = useState(historyDateRange(0));
     const [selectedDateToText, setSelectedDateToText] = useState("today");
 
-    const clientDataFiltered = dashboardData?.order?.filter((item)=>{
-       
-    })
+    // dokonczyc dzialanie filtrowania tablicy dashboardData z wybrana data
+    const dashboardClientsDataFiltered = dashboardData[0]?.filter((item) => {
+      let itemDate = new Date(item.clientDateCreated).getTime();
+      return changedDate < itemDate && itemDate < todaysDate;
+    });
+
+    const dashboardDataFiltered = dashboardData[1]?.filter((item) => {
+      let itemDate = new Date(item.date).getTime();
+      return changedDate < itemDate && itemDate < todaysDate;
+    });
+
+    const getTotalSumOfDateRange = () => {
+      if (typeof dashboardDataFiltered === "undefined") {
+        return 0;
+      }
+      let totalSum = dashboardDataFiltered?.reduce((total, value) => {
+        return total + value.price;
+      }, 0);
+      return totalSum.toFixed(2);
+    };
+
+    const getTotalNewOrdersDateRange = () => {
+      if (typeof dashboardDataFiltered === "undefined") {
+        return 0;
+      }
+      return dashboardDataFiltered?.length;
+    };
+
+    const getTotalNewClientsDateRange = () => {
+      if (typeof dashboardDataFiltered === "undefined") {
+        return 0;
+      }
+      return dashboardClientsDataFiltered?.length;
+    };
 
     const dateRangeToText = (dateNumber) => {
       if (dateNumber === 0) {
@@ -76,6 +69,34 @@ function Homepage() {
       }
     };
 
+    const UpcomingEvents = () => {
+      let upcomingEventsExist = false;
+      if (dashboardData[2] === undefined || dashboardData[2].length === 0) {
+        upcomingEventsExist = false;
+      } else {
+        upcomingEventsExist = true;
+      }
+      return upcomingEventsExist ? (
+        dashboardData[2]?.map((event) => {
+          let dateText = upcomingEventDateText(event.deadlineDate);
+          return (
+            <div className="upcomingEventWrap" key={event.id}>
+              <div className="upcomingEventDate">
+                <span>-{dateText} </span>
+                <span>{event.hours}</span>
+              </div>
+              <div className="upcomingEventTitle">
+                <span>{event.title}</span>
+              </div>
+            </div>
+          );
+        })
+      ) : (
+        <div className="upcomingEventWrap">
+          <span>There are no upcoming events</span>
+        </div>
+      );
+    };
 
     return (
       <div className="topPanelWrap">
@@ -110,7 +131,7 @@ function Homepage() {
             <div className="topPanelDataSummary">
               <p>Income</p>
               <h3 className="maincolor topPanelDataText">
-                {/* {getTotalSumOfDateRange()} */}
+                {getTotalSumOfDateRange()}
                 zł
               </h3>
             </div>
@@ -131,7 +152,7 @@ function Homepage() {
             <div className="topPanelDataSummary">
               <p>New orders</p>
               <h3 className="maincolor topPanelDataText">
-                {/* {getTotalNewOrdersDateRange()} */}
+                {getTotalNewOrdersDateRange()}
               </h3>
             </div>
 
@@ -153,7 +174,7 @@ function Homepage() {
             <div className="topPanelDataSummary">
               <p>New clients</p>
               <h3 className="maincolor topPanelDataText">
-                {/* {getTotalNewClientsDateRange()} */}
+                {getTotalNewClientsDateRange()}
               </h3>
             </div>
 
@@ -173,7 +194,7 @@ function Homepage() {
               <span>Upcoming events</span>
             </div>
 
-            {/* <UpcomingEvents /> */}
+            <UpcomingEvents />
 
             <div className="topPanelSeperator"></div>
             <div>
@@ -262,12 +283,3 @@ function Homepage() {
     );
   };
 
-  return (
-    <div className="bodyWrap dashboardPage">
-      <TopPanel />
-      <ChartComponent />
-    </div>
-  );
-}
-
-export default Homepage;

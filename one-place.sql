@@ -54,7 +54,8 @@ CREATE TABLE calendar (
 --
 
 CREATE TABLE clients (
-  client_id SERIAL PRIMARY KEY,
+  client_id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  account_id UUID NOT NULL,
   client TEXT,
   clientDetails TEXT,
   phone TEXT,
@@ -82,7 +83,7 @@ CREATE TABLE orders (
   price NUMERIC(10, 2),
   status TEXT DEFAULT 'pending',
   workerName TEXT,
-  FOREIGN KEY (client_id) REFERENCES accounts(id)
+  FOREIGN KEY (client_id) REFERENCES clients(client_id)
 );
 
 --

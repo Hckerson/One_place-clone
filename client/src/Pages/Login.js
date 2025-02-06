@@ -5,6 +5,7 @@ import "./Styles/login.css";
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [correspondent, setCorrespondent] = useState("");
 
   const login = async () => {
     try {
@@ -14,9 +15,10 @@ export default function Login() {
         { withCredentials: true }
       );
       if (response.data.success) {
-        window.location.href = '/'
+        window.location.href = "/";
       } else {
-        console.log(response.data.message); 
+        setCorrespondent(response.data.message);
+        console.log(correspondent);
       }
     } catch (error) {
       console.log("Error  registering User ", error);
@@ -54,6 +56,7 @@ export default function Login() {
               </label>
             </div>
             <button onClick={login}>Login</button>
+            {<div className="correspondent font-medium text-sm mt-2 text-red-500">{correspondent}</div>}
           </div>
         </div>
         <div className="infoSide">

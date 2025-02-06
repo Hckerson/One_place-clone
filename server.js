@@ -68,9 +68,7 @@ app.post("/login", (req, res, next) => {
   passport.authenticate("local", (err, user, info) => {
     if (err) return next(err);
     if (!user) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid credentials" });
+      return res.json({ success: false, message: "Invalid credentials" });
     }
 
     req.logIn(user, (err) => {
@@ -110,7 +108,7 @@ app.post("/register", async (req, res) => {
 
 app.get("/dashboard_data", async (req, res) => {
   try {
-    const result = await getDashboardData();
+    const result = await getDashboardData(req.user.id);
     res.json(result);
   } catch (error) {
     console.error("Error getting data", error);

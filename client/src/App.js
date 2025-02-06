@@ -18,7 +18,6 @@ import './index.css'
 
 function App() {
   const ctx = useContext(AuthLoginInfo);
-  console.log(ctx);
   return (
     <BrowserRouter>
       <Sidebar></Sidebar>
