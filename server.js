@@ -108,7 +108,7 @@ app.post("/register", async (req, res) => {
 
 app.get("/dashboard_data", async (req, res) => {
   try {
-    const result = await getDashboardData(req.user.id);
+    const result = await getDashboardData(req.user?.id);
     res.json(result);
   } catch (error) {
     console.error("Error getting data", error);
