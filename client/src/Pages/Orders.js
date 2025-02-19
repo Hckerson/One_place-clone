@@ -4,6 +4,7 @@ import axios from "axios";
 import "./Styles/order.css";
 import { AuthLoginInfo } from "./../AuthComponents/AuthLogin";
 import Popup from "../Components/Popup";
+import clsx from "clsx";
 import SearchBar from "../Components/SearchBar";
 import Pagination from "../Components/Pagination";
 import ReadMoreRoundedIcon from "@mui/icons-material/ReadMoreRounded";
@@ -12,25 +13,18 @@ import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
 
 function Orders() {
   const [newOrderSubmitted, setNewOrderSubmitted] = useState(false);
-
   const [ordersData, setOrdersData] = useState([]);
-   const [filteredData, setFilteredData] = useState([]);
-
+  const [filteredData, setFilteredData] = useState([]);
   const [buttonPopup, setButtonPopup] = useState(false);
-
   const [filterOrders, setFilterOrders] = useState("");
   const [filterId, setFilterId] = useState("");
   const [filterActive, setFilterActive] = useState(1);
-
   const [isNewClient, setIsNewClient] = useState(true);
   const [displaySearch, setDisplaySearch] = useState(false);
   const [oldClientId, setOldClientId] = useState(null);
   const [stringSearch, setStringSearch] = useState("");
   const [allClientsData, setAllClientsData] = useState([]);
-
   const ctx = useContext(AuthLoginInfo);
-
-  console.log(ordersData)
 
   const [clientDetails, setClientDetails] = useState({
     clientName: "",
@@ -53,16 +47,33 @@ function Orders() {
 
   useEffect(() => {
     setNewOrderSubmitted(false);
-    axios
-      .get("http://localhost:5000/orders", { withCredentials: true })
-      .then((res) => {
-        if (res.data != null) {
-          setOrdersData(res.data);
-          setFilteredData(res.data);
-        }
+    const fetchOrders = async () => {
+      const response = await axios.get("http://localhost:5000/orders", {
+        withCredentials: true,
       });
+      const result = response.data;
+      setOrdersData(result);
+      setFilteredData(result);
+      try {
+      } catch (error) {
+        console.error("Error fetching data", error);
+      }
+    };
+    fetchOrders();
   }, [newOrderSubmitted]);
 
+  useEffect(() => {
+    // console.log("Fetched", ordersData);
+  }, [ordersData]);
+
+  const decideStatus = (orders) => {
+    if (orders.length < 1) {
+      setFilteredData(ordersData);
+    } else {
+      const filtered = ordersData.filter((order) => order.status === orders);
+      setFilteredData(filtered);
+    }
+  };
   const handleSearchChange = (newFilteredData) => {
     setFilteredData(newFilteredData);
   };
@@ -74,63 +85,6 @@ function Orders() {
     (currentPage - 1) * itemsPerPage,
     (currentPage - 1) * itemsPerPage + itemsPerPage
   );
-
-  const removeProduct = (e) => {
-    let array = clientDetails.products;
-    console.log(array);
-    let index = clientDetails.products.e;
-    if (index !== -1) {
-      array.splice(index, 1);
-      setClientDetails({
-        ...clientDetails,
-        products: array,
-      });
-    }
-  };
-
-  const addNewOrder = () => {
-    axios
-      .post(
-        "http://localhost:5000/neworder",
-        {
-          clientDetails,
-          isNewClient,
-          oldClientId,
-        },
-        { withCredentials: true }
-      )
-      .then((res) => {
-        if (res.data === "success") {
-          setClientDetails({
-            clientName: "",
-            clientDetails: "",
-            phone: "",
-            country: "Polska",
-            street: "",
-            city: "",
-            postalCode: "",
-            status: "",
-            products: [],
-            workerName: ctx.username,
-          });
-          setProductDetails({
-            productName: "",
-            amount: 1,
-            itemPrice: 0,
-            totalPrice: 0,
-          });
-          setNewOrderSubmitted(true);
-        }
-      });
-  };
-
-  const getAllClientsFromDatabase = () => {
-    axios
-      .get("http://localhost:5000/clients", { withCredentials: true })
-      .then((res) => {
-        setAllClientsData(res.data[0]);
-      });
-  };
 
   const setSearchingInput = (
     id,
@@ -169,59 +123,56 @@ function Orders() {
             onPageChange={(page) => setCurrentPage(page)}
           />
           <div className="orderNavWrap">
-            <div className="orderNav">
-              <ul>
-                <li
-                  className={`${filterActive === 1 ? "active" : ""}`}
-                  onClick={() => {
-                    setFilterOrders("");
-                    setFilterActive(1);
-                  }}
-                >
-                  All orders
-                </li>
-                <li
-                  className={`${filterActive === 2 ? "active" : ""}`}
-                  onClick={() => {
-                    setFilterOrders("Open");
-                    setFilterActive(2);
-                  }}
-                >
-                  Open
-                </li>
-                <li
-                  className={`${filterActive === 3 ? "active" : ""}`}
-                  onClick={() => {
-                    setFilterOrders("Closed");
-                    setFilterActive(3);
-                  }}
-                >
-                  Closed
-                </li>
-                <li
-                  className={`${filterActive === 4 ? "active" : ""}`}
-                  onClick={() => {
-                    setFilterOrders("Shipped");
-                    setFilterActive(4);
-                  }}
-                >
-                  Shipped
-                </li>
-              </ul>
-            </div>
+            <ul className="flex space-x-4 py-2">
+              <button
+                className={clsx("border-b-4 ", filterOrders === "" && "border-b-4 border-red-500")}
+                onClick={() => {
+                  setFilterOrders("");
+                  decideStatus("");
+                }}
+              >
+                All orders
+              </button>
+              <button
+                className={clsx("border-b-4 ", filterOrders === "paid" && "border-b-4 border-red-500")}
+                onClick={() => {
+                  setFilterOrders("paid");
+                  decideStatus("paid");
+                }}
+              >
+                Paid
+              </button>
+              <button
+                className={clsx("border-b-4 ", filterOrders === "pending" && "border-b-4 border-red-500")}
+                onClick={() => {
+                  setFilterOrders("pending");
+                  decideStatus("pending");
+                }}
+              >
+                Pending
+              </button>
+              <button
+                className={clsx("border-b-4 ", filterOrders === "shipped" && "border-b-4 border-red-500")}
+                onClick={() => {
+                  setFilterOrders("shipped");
+                  decideStatus("shipped");
+                }}
+              >
+                Shipped
+              </button>
+            </ul>
             <div className="addOrderWrap">
               <SearchBar
                 data={ordersData}
+                filters={filterOrders}
                 handleSearchChange={handleSearchChange}
                 dataType="orders"
-                status={filterOrders}
               />
               <button
                 className="addOrder"
                 onClick={() => {
                   setButtonPopup(true);
                   setIsNewClient(true);
-                  getAllClientsFromDatabase();
                 }}
               >
                 <AddCircleOutlineRoundedIcon />
@@ -249,9 +200,9 @@ function Orders() {
                         <font className="maincolor">#</font>
                         {order.id}
                       </td>
-                      <td>{order.client}</td>
+                      <td>{order.username}</td>
                       <td>{order.date.split("T")[0]}</td>
-                      <td className={order.status}>{order.status}</td>
+                      <td >{order.status}</td>
                       <td>
                         {order.price}
                         zł
@@ -323,7 +274,7 @@ function Orders() {
                     {allClientsData
                       ?.filter((v) => {
                         if (
-                          [v.client_id + "", v.client.toLowerCase()].some((r) =>
+                          [v.client_id + "", v.client].some((r) =>
                             r.includes(stringSearch)
                           )
                         ) {
@@ -479,8 +430,8 @@ function Orders() {
                     }
                     required="required"
                   >
-                    <option>Open</option>
-                    <option>Closed</option>
+                    <option>Paid</option>
+                    <option>Pending</option>
                     <option>Shipped</option>
                   </select>
                 </div>
@@ -557,10 +508,7 @@ function Orders() {
                             <td>{product.amount}</td>
                             <td>{product.itemPrice}</td>
                             <td>{product.amount * product.itemPrice}</td>
-                            <td
-                              className="removeProduct"
-                              onClick={() => removeProduct(key)}
-                            >
+                            <td className="removeProduct">
                               <RemoveRoundedIcon />
                             </td>
                           </tr>
@@ -600,10 +548,7 @@ function Orders() {
               </div>
             </div>
             <div className="submitNewOrder">
-              <button
-                className="submitNewOrderBtn"
-                onClick={() => addNewOrder()}
-              >
+              <button className="submitNewOrderBtn">
                 <AddCircleOutlineRoundedIcon />
                 <span className="addOrderText">Add</span>
               </button>

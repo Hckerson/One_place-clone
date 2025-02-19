@@ -20,7 +20,6 @@ import ContentPasteRoundedIcon from "@mui/icons-material/ContentPasteRounded";
 
 function Homepage() {
   const [dashboardData, setDashboardData] = useState({});
-  const [show, setShow] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,7 +34,7 @@ function Homepage() {
   }, []);
 
   useEffect(() => {
-    console.log("Updated dashboardData:", dashboardData); // ✅ Logs AFTER state updates
+    // console.log("Updated dashboardData:", dashboardData); // ✅ Logs AFTER state updates
   }, [dashboardData]);
 
   const TopPanel = () => {
@@ -50,9 +49,9 @@ function Homepage() {
     const [selectedDateToText, setSelectedDateToText] = useState("today");
 
     const calendarDataFiltered = dashboardData?.calendar?.filter((item) => {
-      const dateItem = item.adddate.split("T")[0];
+      const dateItem = item.deadlinedate.split("T")[0];
       const dateToCompare = new Date(dateItem).getTime();
-      return changedDate < dateToCompare && dateToCompare < todaysDate;
+      return changedDate < dateToCompare 
     });
     const orderDataFiltered = dashboardData?.order?.filter((item) => {
       const dateItem = item.date.split("T")[0];
@@ -60,11 +59,17 @@ function Homepage() {
       return changedDate < dateToCompare && dateToCompare < todaysDate;
     });
 
-    const getTotalClient = dashboardData?.client?.length;
+    const clientDataFiletered = dashboardData?.client?.filter((client)=>{
+      const dateItem = client.clientdatecreated.split("T")[0];
+      const dateToCompare = new Date(dateItem).getTime();
+      return changedDate < dateToCompare && dateToCompare < todaysDate;
+    });
+
+    const getTotalClient = () =>{
+      if (!clientDataFiletered?.length) return 0;
+      return clientDataFiletered?.length
+    }
     const getTotalSumOfRange = () => {
-      const t = calendarDataFiltered;
-      const u = orderDataFiltered;
-      console.log(t, u);
       if (!orderDataFiltered?.length) return 0;
       const totalPriceFiltered = orderDataFiltered.reduce((total, item) => {
         return total + Number(item.price);
@@ -79,7 +84,6 @@ function Homepage() {
 
     const getTotalCalendarOfDateRange = () => {
       if (!calendarDataFiltered?.length) return 0;
-      if (Boolean(calendarDataFiltered?.length > 1)) setShow(true);
       return calendarDataFiltered?.length;
     };
 
@@ -119,13 +123,14 @@ function Homepage() {
         upcomingEventsExist = true;
       }
       return upcomingEventsExist ? (
-        calendarDataFiltered.map((event) => {
+        calendarDataFiltered?.slice(0, 1).map((event) => {
           let dateText = upcomingEventDateText(event.deadlinedate);
+          const hours = event.hours.split('.')[0]
           return (
             <div className="upcomingEventWrap" key={event.id}>
               <div className="upcomingEventDate">
-                <span>-{dateText} </span>
-                <span>{event.hours}</span>
+                <span className="block">-{dateText} </span>
+                <span className="ml-1">{hours}</span>
               </div>
               <div className="upcomingEventTitle">
                 <span>{event.title}</span>
@@ -214,7 +219,7 @@ function Homepage() {
 
             <div className="topPanelDataSummary">
               <p>New clients</p>
-              <h3 className="maincolor topPanelDataText">{getTotalClient} </h3>
+              <h3 className="maincolor topPanelDataText">{getTotalClient()} </h3>
             </div>
 
             <div className="topPanelSeperator"></div>
@@ -238,7 +243,7 @@ function Homepage() {
             <div className="topPanelSeperator"></div>
 
             <div>
-              {show && (
+              {getTotalCalendarOfDateRange() > 1 && (
                 <span className="topPanelBottomText">
                   <Link to="/calendar" className="maincolor">
                     See more events
@@ -278,13 +283,13 @@ function Homepage() {
     const dataBasedOnPastMonths = () => {
       const pastMonthsData = getPastMonths();
       pastMonthsData.forEach((el, i) => {
-        el.totalMonthSum = dashboardData[1]?.reduce((total, item) => {
+        el.totalMonthSum = dashboardData?.order?.reduce((total, item) => {
           let itemDate = new Date(item.date);
           if (
             el.firstDay.getTime() < itemDate.getTime() &&
             itemDate.getTime() < el.lastDay.getTime()
           ) {
-            return total + item.price;
+            return total + Number(item.price);
           } else {
             return total;
           }

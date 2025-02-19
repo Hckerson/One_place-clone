@@ -17,7 +17,7 @@ import { createRequire } from "module";
 import "dotenv/config";
 const require = createRequire(import.meta.url);
 const pgSession = require("connect-pg-simple")(expressSession);
-import { getDashboardData } from "./queries.js";
+import { getDashboardData, getAllOrders } from "./queries.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -82,7 +82,6 @@ app.post("/register", async (req, res) => {
   try {
     const { username, password, email } = req.body;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    const id = uuidv4();
     const checkUser = await client.query('SELECT * FROM accounts WHERE email = $1', [email]);
     if (checkUser.rows.length > 0) {
       return res.json({ message: "User already exists" });
@@ -106,9 +105,18 @@ app.post("/register", async (req, res) => {
   }
 });
 
+app.get('/orders', async (req, res) => {
+  try {
+    const orders = await getAllOrders();
+    res.json(orders);
+  } catch (error) {
+    console.error('Failed to get orders', error); 
+  }
+})
+
 app.get("/dashboard_data", async (req, res) => {
   try {
-    const result = await getDashboardData(req.user?.id);
+    const result = await getDashboardData();
     res.json(result);
   } catch (error) {
     console.error("Error getting data", error);

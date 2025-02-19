@@ -39,15 +39,16 @@ INSERT INTO accounts (id, username, password, role, dateCreated) VALUES
 -- Table structure for table calendar
 --
 
-CREATE TABLE calendar (
-  id SERIAL PRIMARY KEY,
-  title TEXT,
-  details TEXT,
-  deadlineDate DATE,
-  hours TEXT,
-  addDate DATE,
-  worker TEXT
-);
+-- fix calendar sql table creation data
+    CREATE TABLE calendar (
+      id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+      title TEXT,
+      details TEXT,
+      deadlineDate TIMESTAMP DEFAULT NOW(),
+      hours TIME DEFAULT CURRENT_TIME,
+      addDate TIMESTAMP DEFAULT NOW,
+      worker TEXT
+    );
 
 --
 -- Table structure for table clients
@@ -55,7 +56,7 @@ CREATE TABLE calendar (
 
 CREATE TABLE clients (
   client_id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  account_id UUID NOT NULL,
+  account_id UUID NOT NULL REFERENCES accounts(id),
   client TEXT,
   clientDetails TEXT,
   phone TEXT,
@@ -63,9 +64,11 @@ CREATE TABLE clients (
   street TEXT,
   city TEXT,
   postalCode TEXT,
-  clientDateCreated DATE
+  clientDateCreated DATE DEFAULT CURRENT_DATE
 );
 
+a51966dc-8f87-4d9a-ae08-a164d8a6266c
+  
 --
 -- Table structure for table orders
 --
@@ -81,7 +84,7 @@ CREATE TABLE orders (
   client_id UUID NOT NULL,
   date TIMESTAMP DEFAULT NOW(),
   price NUMERIC(10, 2),
-  status TEXT DEFAULT 'pending',
+  status TEXT DEFAULT ' ',
   workerName TEXT,
   FOREIGN KEY (client_id) REFERENCES clients(client_id)
 );

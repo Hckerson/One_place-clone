@@ -1,51 +1,45 @@
-import react, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
-import React from "react";
-
-function SearchBar({ data, handleSearchChange, dataType, status }) {
+function SearchBar({ data, handleSearchChange, dataType, filters }) {
   const [searchInput, setSearchInput] = useState("");
 
-  const clientsDataFiltered = () => {
-    const dataFiltered = data
-      ?.filter((val) => {
-        if (
-          [val.client.toLowerCase(), val.client_id + ""].some((r) =>
-            r.includes(searchInput.toLowerCase())
-          )
-        ) {
-          return val;
-        }
-      })
-      .reverse();
-    handleSearchChange(dataFiltered);
-  }
-
-  const ordersDataFiltered = () => {
-    const dataFiltered = data
-      ?.filter((val) => {
-        if (
-          val.status.includes(status) &&
-          [val.client.toLowerCase(), val.id + ""].some((r) =>
-            r.includes(searchInput.toLowerCase())
-          )
-        ) {
-          return val;
-        }
-      })
-      .reverse();
-    handleSearchChange(dataFiltered);
-  }
-
   useEffect(() => {
-    if(dataType === "orders") {
-        ordersDataFiltered();
-    }
-    if(dataType === "clients") {
-        clientsDataFiltered();
-    }
-      
-  }, [searchInput, status]);
+    if (!data) return;
 
+    const filterData = () => {
+      const lowerSearch = searchInput.toLowerCase();
+      let filteredData = [];
+
+      if (searchInput.trim() === "") {
+        handleSearchChange(
+          data.filter((item) => item.status === filters || filters === "")
+        );
+        return;
+      }
+
+      if (dataType === "orders") {
+        filteredData = data.filter((item) =>
+          [item.price + "", item.status, item.workername, item.username].some(
+            (r) => r?.toString().toLowerCase().includes(lowerSearch)
+          )
+        );
+      } else if (dataType === "clients") {
+        filteredData = data.filter((item) =>
+          [
+            item.client,
+            item.clientdetails,
+            item.phone,
+            item.country,
+            item.city,
+          ].some((r) => r?.toString().toLowerCase().includes(lowerSearch))
+        );
+      }
+
+      handleSearchChange(filteredData);
+    };
+
+    filterData();
+  }, [searchInput, data, dataType, filters]);
 
   return (
     <>

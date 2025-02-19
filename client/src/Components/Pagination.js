@@ -13,7 +13,7 @@ function Pagination({
 
   useEffect(() => {
     if (total > 0 && itemsPerPage > 0)
-      setTotalPages(Math.ceil(total / itemsPerPage));
+      setTotalPages(Math.ceil(total / itemsPerPage)); 
   }, [total, itemsPerPage]);
 
   const paginationItems = useMemo(() => {
