@@ -94,12 +94,20 @@ CREATE TABLE orders (
 --
 
 CREATE TABLE products (
-  id SERIAL PRIMARY KEY,
-  order_id INTEGER,
-  productName TEXT,
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  order_id UUID NOT NULL REFERENCES orders(id),
+  productName TEXT NOT NULL,
   amount INTEGER,
-  itemPrice REAL,
-  totalPrice REAL
+  itemPrice NUMERIC(10, 2),
+  totalPrice  NUMERIC(10, 2),
+);
+
+CREATE TABLE prices (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  product TEXT NOT NULL,
+  price NUMERIC(10, 2),
+  former_price NUMERIC(10, 2),
+  date TIMESTAMP DEFAULT NOW()
 );
 
 --

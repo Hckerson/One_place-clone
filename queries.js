@@ -39,3 +39,25 @@ export async function getAllOrders() {
     console.error("Failed to query order from database", error);
   }
 }
+
+export async function getProductPrice(product) {
+  try {
+    const productPrice = await client.query(
+      "SELECT price FROM prices WHERE product LIKE  $1",
+      [`%${product}%`]
+    );
+    return productPrice.rows
+  } catch (error) {
+    console.error("Failed to get product price", error);
+    
+  }
+}
+
+export async function getAllClientWithOrders(){
+  try {
+    const allClientsWithOrders = await client.query("SELECT c.client, c.clientdetails, c.phone, c.country, c.city,  c.street, c.postalcode, o.status, o.client_id  FROM orders as o INNER JOIN clients as c  ON o.client_id = c.client_id");
+    return allClientsWithOrders.rows;
+  } catch (error) {
+    console.error("Failed to query clietn from database", error);
+  }
+}

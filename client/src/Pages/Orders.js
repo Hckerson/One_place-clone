@@ -5,6 +5,7 @@ import "./Styles/order.css";
 import { AuthLoginInfo } from "./../AuthComponents/AuthLogin";
 import Popup from "../Components/Popup";
 import clsx from "clsx";
+import { useDebouncedCallback } from "use-debounce";
 import SearchBar from "../Components/SearchBar";
 import Pagination from "../Components/Pagination";
 import ReadMoreRoundedIcon from "@mui/icons-material/ReadMoreRounded";
@@ -30,7 +31,7 @@ function Orders() {
     clientName: "",
     clientDetails: "",
     phone: "",
-    country: "Polska",
+    country: "",
     street: "",
     city: "",
     postalCode: "",
@@ -63,8 +64,20 @@ function Orders() {
   }, [newOrderSubmitted]);
 
   useEffect(() => {
+    const fetchClientData = async () => {
+      const response = await axios.get("http://localhost:5000/clients", {
+        withCredentials: true,
+      });
+      const result = response.data;
+      setAllClientsData(result);
+    };
+    fetchClientData();
+  });
+
+  useEffect(() => {
     // console.log("Fetched", ordersData);
-  }, [ordersData]);
+    console.log("display", clientDetails.status);
+  }, [ordersData, displaySearch]);
 
   const decideStatus = (orders) => {
     if (orders.length < 1) {
@@ -77,6 +90,20 @@ function Orders() {
   const handleSearchChange = (newFilteredData) => {
     setFilteredData(newFilteredData);
   };
+
+  const fetchPrice = useDebouncedCallback(async (product) => {
+    const response = await axios.post(
+      "http://localhost:5000/get_price",
+      { productName: product },
+      { withCredentials: true }
+    );
+    const amount = response?.data[0]?.price;
+    const result = Number(amount) ?? 0;
+    setProductDetails({
+      ...productDetails,
+      itemPrice: result,
+    });
+  }, 2000);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30;
@@ -93,8 +120,9 @@ function Orders() {
     phone,
     country,
     street,
+    postalCode,
     city,
-    postalCode
+    status
   ) => {
     setOldClientId(id);
     setClientDetails({
@@ -104,8 +132,9 @@ function Orders() {
       phone: phone,
       country: country,
       street: street,
-      city: city,
       postalCode: postalCode,
+      city: city,
+      status: status,
     });
     setDisplaySearch(false);
     setStringSearch("");
@@ -125,7 +154,10 @@ function Orders() {
           <div className="orderNavWrap">
             <ul className="flex space-x-4 py-2">
               <button
-                className={clsx("border-b-4 ", filterOrders === "" && "border-b-4 border-red-500")}
+                className={clsx(
+                  "border-b-4 ",
+                  filterOrders === "" && "border-b-4 border-red-500"
+                )}
                 onClick={() => {
                   setFilterOrders("");
                   decideStatus("");
@@ -134,7 +166,10 @@ function Orders() {
                 All orders
               </button>
               <button
-                className={clsx("border-b-4 ", filterOrders === "paid" && "border-b-4 border-red-500")}
+                className={clsx(
+                  "border-b-4 ",
+                  filterOrders === "paid" && "border-b-4 border-red-500"
+                )}
                 onClick={() => {
                   setFilterOrders("paid");
                   decideStatus("paid");
@@ -143,7 +178,10 @@ function Orders() {
                 Paid
               </button>
               <button
-                className={clsx("border-b-4 ", filterOrders === "pending" && "border-b-4 border-red-500")}
+                className={clsx(
+                  "border-b-4 ",
+                  filterOrders === "pending" && "border-b-4 border-red-500"
+                )}
                 onClick={() => {
                   setFilterOrders("pending");
                   decideStatus("pending");
@@ -152,7 +190,10 @@ function Orders() {
                 Pending
               </button>
               <button
-                className={clsx("border-b-4 ", filterOrders === "shipped" && "border-b-4 border-red-500")}
+                className={clsx(
+                  "border-b-4 ",
+                  filterOrders === "shipped" && "border-b-4 border-red-500"
+                )}
                 onClick={() => {
                   setFilterOrders("shipped");
                   decideStatus("shipped");
@@ -202,7 +243,7 @@ function Orders() {
                       </td>
                       <td>{order.username}</td>
                       <td>{order.date.split("T")[0]}</td>
-                      <td >{order.status}</td>
+                      <td>{order.status}</td>
                       <td>
                         {order.price}
                         zł
@@ -222,7 +263,7 @@ function Orders() {
       </div>
 
       <Popup trigger={buttonPopup} setTrigger={setButtonPopup}>
-        <div className="popupWrap">
+        <div className="popupWrap h-[80vh]  -translate-y-20">
           <div className="productSummary">
             <h3 className="productSummaryLeft">Add new order</h3>
             <div className="productSummaryRight newUserSwitch">
@@ -241,7 +282,7 @@ function Orders() {
                 onChange={() => setIsNewClient(false)}
               />
               <div className="switch">
-                <label className="switchLabel" htmlFor="yes">
+                <label className="switchLabel " htmlFor="yes">
                   Yes
                 </label>
                 <label className="switchLabel" htmlFor="no">
@@ -270,41 +311,50 @@ function Orders() {
                   }}
                 />{" "}
                 {displaySearch && (
-                  <div className="autoCompleteContainer">
+                  <ul className="bg-red-500 relative p-1 ">
                     {allClientsData
-                      ?.filter((v) => {
-                        if (
-                          [v.client_id + "", v.client].some((r) =>
-                            r.includes(stringSearch)
-                          )
-                        ) {
-                          return v;
-                        }
-                      })
+                      ?.filter((client) =>
+                        [
+                          client.client_id,
+                          client.client,
+                          client.clientdetails,
+                          client.phone,
+                          client.country,
+                          client.street,
+                          client.postalcode,
+                          client.city,
+                          client.status,
+                        ].some((r) =>
+                          r.toLowerCase().includes(stringSearch.toLowerCase())
+                        )
+                      )
                       .map((val, i) => {
                         return (
-                          <div
+                          <li
                             onClick={() =>
                               setSearchingInput(
                                 val.client_id,
                                 val.client,
-                                val.clientDetails,
+                                val.clientdetails,
                                 val.phone,
                                 val.country,
                                 val.street,
+                                val.postalcode,
                                 val.city,
-                                val.postalCode
+                                val.status
                               )
                             }
                             className="autoCompleteOption"
                             key={i}
                           >
-                            <span>{val.client_id}</span>
+                            <span>
+                              {val.client_id.substring(0, 8) + "..."}{" "}
+                            </span>
                             <span>{val.client}</span>
-                          </div>
+                          </li>
                         );
                       })}
-                  </div>
+                  </ul>
                 )}
               </div>
             )}
@@ -420,7 +470,6 @@ function Orders() {
                 <div className="input-group">
                   <select
                     className="orderDetailsSelect"
-                    placeholder="Status"
                     value={clientDetails.status}
                     onChange={(e) =>
                       setClientDetails({
@@ -430,9 +479,12 @@ function Orders() {
                     }
                     required="required"
                   >
-                    <option>Paid</option>
-                    <option>Pending</option>
-                    <option>Shipped</option>
+                    <option value="" disabled>
+                      Select Status
+                    </option>
+                    <option value={"paid"}>Paid</option>
+                    <option value={"pending"}>Pending</option>
+                    <option value={"shipped"}>Shipped</option>
                   </select>
                 </div>
               </div>
@@ -457,12 +509,13 @@ function Orders() {
                             placeholder="Product name"
                             className="productDetailsInput"
                             value={productDetails.productName}
-                            onChange={(e) =>
+                            onChange={(e) => {
                               setProductDetails({
                                 ...productDetails,
                                 productName: e.target.value,
-                              })
-                            }
+                              });
+                              fetchPrice(e.target.value);
+                            }}
                             required="required"
                           />
                         </td>
@@ -484,22 +537,13 @@ function Orders() {
                         <td>
                           <input
                             type="number"
-                            placeholder="10.00"
                             className="productDetailsInput"
                             value={productDetails.itemPrice}
-                            onChange={(e) =>
-                              setProductDetails({
-                                ...productDetails,
-                                itemPrice: Number(e.target.value),
-                              })
-                            }
-                            required="required"
                           />
                         </td>
                         <td>
                           {productDetails.itemPrice * productDetails.amount}
                         </td>
-                        <td></td>
                       </tr>
                       {clientDetails.products.map((product, key) => {
                         return (

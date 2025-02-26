@@ -17,7 +17,7 @@ import { createRequire } from "module";
 import "dotenv/config";
 const require = createRequire(import.meta.url);
 const pgSession = require("connect-pg-simple")(expressSession);
-import { getDashboardData, getAllOrders } from "./queries.js";
+import { getDashboardData, getAllOrders, getAllClientWithOrders, getProductPrice } from "./queries.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -114,12 +114,32 @@ app.get('/orders', async (req, res) => {
   }
 })
 
+app.get("/clients", async (req, res)=>{
+  try {
+    const result = await getAllClientWithOrders();
+    res.json(result);
+  } catch (error) {
+    console.error("Failed to get clients", error);
+  }
+})
+
 app.get("/dashboard_data", async (req, res) => {
   try {
     const result = await getDashboardData();
     res.json(result);
   } catch (error) {
     console.error("Error getting data", error);
+  }
+});
+
+app.post("/get_price", async (req, res) => {
+  const {productName} = req.body
+  try {
+    const result = await getProductPrice(productName);
+
+    res.json(result);
+  } catch (error) {
+    console.error("Error getting price", error);
   }
 });
 
