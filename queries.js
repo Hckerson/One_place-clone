@@ -48,9 +48,10 @@ export async function addNewClient(details, account_id) {
     city,
     products,
     postalCode,
+    status,
   } = details;
-  await client.query(
-    "INSERT INTO clients(account_id, client, clientDetails, phone, country, street, city, postalCode) VALUES($1, $2, $3, $4, $5, $6, $7, $8 )",
+  const result = await client.query(
+    "INSERT INTO clients(account_id, client, clientDetails, phone, country, street, city, postalCode) VALUES($1, $2, $3, $4, $5, $6, $7, $8 ) RETURNING  client_id",
     [
       account_id,
       clientName,
@@ -62,12 +63,48 @@ export async function addNewClient(details, account_id) {
       postalCode,
     ]
   );
-  addMultipleProducts(products)
+  const id = result.rows[0].client_id;
+  addNewOrder(id, products, status);
 }
 
-export async function addNewOrder(client_id) {}
+export async function addNewOrder(client_id, product, status) {
+  try {
+    const totalPrice = product.reduce(
+      (total, item) => total + item.amount * item.itemPrice,
+      0
+    );
+    const result = await client.query(
+      "INSERT INTO orders (client_id, price, status) VALUES($1, $2, $3) RETURNING id",
+      [client_id, totalPrice, status]
+    );
+    const id = result.rows[0].id;
+    await Promise.all(
+      product.map(async (item) => {
+        const itemTotalCost = item.amount * item.itemPrice;
+        await addMultipleProducts(
+          id,
+          item.productName,
+          item.amount,
+          item.itemPrice,
+          itemTotalCost
+        );
+      })
+    );
+  } catch (error) {
+    console.error("Error adding new order", error);
+  }
+}
 
-export async function addMultipleProducts() {}
+export async function addMultipleProducts(id, name, amount, price, totalCost) {
+  try {
+    await client.query(
+      "INSERT INTO products (order_id, productName, amount, itemPrice, totalPrice) VALUES ($1, $2, $3, $4, $5)",
+      [id, name, amount, price, totalCost]
+    );
+  } catch (error) {
+    console.error("Error adding product", error);
+  }
+}
 
 export async function getProductPrice(product) {
   try {

@@ -81,11 +81,11 @@ VALUES
 
 CREATE TABLE orders (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY, 
-  client_id UUID NOT NULL,
+  client_id UUID NOT NULL,//
   date TIMESTAMP DEFAULT NOW(),
-  price NUMERIC(10, 2),
-  status TEXT DEFAULT ' ',
-  workerName TEXT,
+  price NUMERIC(10, 2),//
+  status TEXT DEFAULT 'Pending', 
+  workerName TEXT DEFAULT 'Mayor',
   FOREIGN KEY (client_id) REFERENCES clients(client_id)
 );
 

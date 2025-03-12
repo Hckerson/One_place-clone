@@ -15,7 +15,7 @@ import { createRequire } from "module";
 import "dotenv/config";
 const require = createRequire(import.meta.url);
 const pgSession = require("connect-pg-simple")(expressSession);
-import { getDashboardData, getAllOrders, getAllClientWithOrders, getProductPrice, addNewClient, addNewOrder, addMultipleProducts } from "./queries.js";
+import { getDashboardData, getAllOrders, getAllClientWithOrders, getProductPrice, addNewClient, addNewOrder } from "./queries.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -143,7 +143,9 @@ app.post('/new_order', async (req, res)=>{
     }
   }else{
     try {
-      addNewOrder(oldClientId) 
+      const product = clientDetails.products
+      const status = clientDetails.status
+      addNewOrder( oldClientId, product, status) 
     } catch (error) {
       console.error('Error creating order for existing client', error)
     }
