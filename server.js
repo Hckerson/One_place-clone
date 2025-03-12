@@ -4,12 +4,10 @@ import bodyParser from "body-parser";
 import { initializer } from "./passport-config.js";
 import passport from "passport";
 import bcrypt from "bcryptjs";
-import { v4 as uuidv4 } from "uuid";
 import cors from "cors";
 import pkg from "pg";
 const { Pool } = pkg;
 import path from "path";
-import flash from "express-flash";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import expressSession from "express-session";
@@ -17,7 +15,7 @@ import { createRequire } from "module";
 import "dotenv/config";
 const require = createRequire(import.meta.url);
 const pgSession = require("connect-pg-simple")(expressSession);
-import { getDashboardData, getAllOrders, getAllClientWithOrders, getProductPrice } from "./queries.js";
+import { getDashboardData, getAllOrders, getAllClientWithOrders, getProductPrice, addNewClient, addNewOrder, addMultipleProducts } from "./queries.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -132,11 +130,30 @@ app.get("/dashboard_data", async (req, res) => {
   }
 });
 
+app.post('/new_order', async (req, res)=>{
+  const account_id = req.user.id
+  const item = await req.body
+  console.log(JSON.stringify(item, null, 2))
+  const {clientDetails,isNewClient, oldClientId } = req.body
+  if(isNewClient){
+    try { 
+      addNewClient(clientDetails, account_id);
+    } catch (error) {
+      console.error('Error setting up new client', error)
+    }
+  }else{
+    try {
+      addNewOrder(oldClientId) 
+    } catch (error) {
+      console.error('Error creating order for existing client', error)
+    }
+  }
+})
+
 app.post("/get_price", async (req, res) => {
   const {productName} = req.body
   try {
     const result = await getProductPrice(productName);
-
     res.json(result);
   } catch (error) {
     console.error("Error getting price", error);

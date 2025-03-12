@@ -21,6 +21,8 @@ function Orders() {
   const [filterId, setFilterId] = useState("");
   const [filterActive, setFilterActive] = useState(1);
   const [isNewClient, setIsNewClient] = useState(true);
+  const [likelyProduct, setLikelyProduct] = useState([]);
+  const [dropdown, setDropdown] = useState(false);
   const [displaySearch, setDisplaySearch] = useState(false);
   const [oldClientId, setOldClientId] = useState(null);
   const [stringSearch, setStringSearch] = useState("");
@@ -97,8 +99,14 @@ function Orders() {
       { productName: product },
       { withCredentials: true }
     );
-    const amount = response?.data[0]?.price;
-    const result = Number(amount) ?? 0;
+    if (product.lenth < 1) {
+      setLikelyProduct([]);
+    } else {
+      setLikelyProduct([...(response?.data?.likelyProduct ?? [])]);
+    }
+    const amount = response?.data?.price;
+    const result = Number(amount) || 0;
+    console.log(result);
     setProductDetails({
       ...productDetails,
       itemPrice: result,
@@ -503,10 +511,9 @@ function Orders() {
                     </thead>
                     <tbody>
                       <tr>
-                        <td>
+                        <td className="relative">
                           <input
                             type="text"
-                            placeholder="Product name"
                             className="productDetailsInput"
                             value={productDetails.productName}
                             onChange={(e) => {
@@ -514,10 +521,36 @@ function Orders() {
                                 ...productDetails,
                                 productName: e.target.value,
                               });
-                              fetchPrice(e.target.value);
+                              if (e.target.value.length > 0) {
+                                setDropdown(true);
+                                fetchPrice(e.target.value);
+                              } else {
+                                setDropdown(false);
+                              }
                             }}
                             required="required"
                           />
+                          <ul className="flex flex-col space-y-9 translate-y-1 w-full">
+                            {dropdown &&
+                              likelyProduct?.map((name, index) => {
+                                return (
+                                  <li
+                                    key={index}
+                                    onClick={() => {
+                                      setProductDetails({
+                                        ...productDetails,
+                                        productName: name.product,
+                                      });
+                                      fetchPrice(name.product);
+                                      setDropdown(false);
+                                    }}
+                                    className="absolute top-full w-full cursor-pointer  bg-stone-200 p-1  rounded-lg"
+                                  >
+                                    {name.product}
+                                  </li>
+                                );
+                              })}
+                          </ul>
                         </td>
                         <td>
                           <input
@@ -539,6 +572,12 @@ function Orders() {
                             type="number"
                             className="productDetailsInput"
                             value={productDetails.itemPrice}
+                            onChange={() => {
+                              setProductDetails({
+                                ...productDetails,
+                                itemPrice: Number(productDetails.itemPrice),
+                              });
+                            }}
                           />
                         </td>
                         <td>
@@ -575,6 +614,12 @@ function Orders() {
                       ...clientDetails,
                       products: [...clientDetails.products, productDetails],
                     });
+                    setProductDetails({
+                      productName: "",
+                      amount: 1,
+                      itemPrice: 0,
+                      totalPrice: 0,
+                    })
                   }}
                 >
                   + Add next product
@@ -583,11 +628,8 @@ function Orders() {
               <div className="productSummaryRight">
                 <span className="totalCost">
                   Total price of products -{" "}
-                  {clientDetails.products.reduce(
-                    (a, b) => a + (b.itemPrice * b.amount || 0),
-                    0
-                  )}
-                  zł
+                  {clientDetails.products.reduce((total, item)=> total + (item.itemPrice * item.amount), 0)}
+                  $
                 </span>
               </div>
             </div>

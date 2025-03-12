@@ -11,9 +11,7 @@ const client = new Pool({
 });
 
 export async function getDashboardData() {
-  const clientData = await client.query(
-    "SELECT * FROM clients "
-  );
+  const clientData = await client.query("SELECT * FROM clients ");
   const orderData = await client.query(
     "SELECT * FROM orders as o  INNER JOIN clients as c ON o.client_id = c.client_id WHERE o.status = 'paid'"
   );
@@ -40,22 +38,63 @@ export async function getAllOrders() {
   }
 }
 
+export async function addNewClient(details, account_id) {
+  const {
+    clientName,
+    clientDetails,
+    phone,
+    country,
+    street,
+    city,
+    products,
+    postalCode,
+  } = details;
+  await client.query(
+    "INSERT INTO clients(account_id, client, clientDetails, phone, country, street, city, postalCode) VALUES($1, $2, $3, $4, $5, $6, $7, $8 )",
+    [
+      account_id,
+      clientName,
+      clientDetails,
+      phone,
+      country,
+      street,
+      city,
+      postalCode,
+    ]
+  );
+  addMultipleProducts(products)
+}
+
+export async function addNewOrder(client_id) {}
+
+export async function addMultipleProducts() {}
+
 export async function getProductPrice(product) {
   try {
-    const productPrice = await client.query(
-      "SELECT price FROM prices WHERE product LIKE  $1",
-      [`%${product}%`]
-    );
-    return productPrice.rows
+    if (product.length > 0) {
+      const productPrice = await client.query(
+        "SELECT price FROM prices WHERE product LIKE  $1",
+        [`%${product}%`]
+      );
+      const likelyProduct = await client.query(
+        "SELECT product FROM prices WHERE product LIKE  $1",
+        [`%${product}%`]
+      );
+      return {
+        price: productPrice.rows[0].price,
+        likelyProduct: likelyProduct.rows,
+      };
+    }
   } catch (error) {
     console.error("Failed to get product price", error);
-    
   }
 }
 
-export async function getAllClientWithOrders(){
+export async function getAllClientWithOrders() {
   try {
-    const allClientsWithOrders = await client.query("SELECT c.client, c.clientdetails, c.phone, c.country, c.city,  c.street, c.postalcode, o.status, o.client_id  FROM orders as o INNER JOIN clients as c  ON o.client_id = c.client_id");
+    const allClientsWithOrders = await client.query(
+      "SELECT c.client, c.clientdetails, c.phone, c.country, c.city,  c.street, c.postalcode, o.status, o.client_id  FROM orders as o INNER JOIN clients as c  ON o.client_id = c.client_id"
+    );
     return allClientsWithOrders.rows;
   } catch (error) {
     console.error("Failed to query clietn from database", error);
