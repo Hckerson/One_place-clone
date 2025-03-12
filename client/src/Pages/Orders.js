@@ -76,10 +76,7 @@ function Orders() {
     fetchClientData();
   });
 
-  useEffect(() => {
-    // console.log("Fetched", ordersData);
-    console.log("display", clientDetails.status);
-  }, [ordersData, displaySearch]);
+  useEffect(() => {}, [ordersData, displaySearch]);
 
   const decideStatus = (orders) => {
     if (orders.length < 1) {
@@ -89,6 +86,29 @@ function Orders() {
       setFilteredData(filtered);
     }
   };
+
+  const removeProduct = (identifier) => {
+    console.log(identifier);
+
+    // Use filter to create a new array without the item to remove
+    const updatedProductList = clientDetails.products.filter(
+      (_, index) => index !== identifier
+    );
+
+    setClientDetails({
+      ...clientDetails,
+      products: updatedProductList,
+    });
+  };
+
+  const addNewOrder = async () => {
+    const response = await axios.post(
+      "http://localhost:5000/new_order",
+      { clientDetails, isNewClient, oldClientId },
+      { withCredentials: true }
+    );
+  };
+
   const handleSearchChange = (newFilteredData) => {
     setFilteredData(newFilteredData);
   };
@@ -106,7 +126,6 @@ function Orders() {
     }
     const amount = response?.data?.price;
     const result = Number(amount) || 0;
-    console.log(result);
     setProductDetails({
       ...productDetails,
       itemPrice: result,
@@ -584,14 +603,17 @@ function Orders() {
                           {productDetails.itemPrice * productDetails.amount}
                         </td>
                       </tr>
-                      {clientDetails.products.map((product, key) => {
+                      {clientDetails.products.map((product, index) => {
                         return (
-                          <tr key={key}>
+                          <tr key={index}>
                             <td>{product.productName}</td>
                             <td>{product.amount}</td>
                             <td>{product.itemPrice}</td>
                             <td>{product.amount * product.itemPrice}</td>
-                            <td className="removeProduct">
+                            <td
+                              className="removeProduct"
+                              onClick={() => removeProduct(index)}
+                            >
                               <RemoveRoundedIcon />
                             </td>
                           </tr>
@@ -619,7 +641,7 @@ function Orders() {
                       amount: 1,
                       itemPrice: 0,
                       totalPrice: 0,
-                    })
+                    });
                   }}
                 >
                   + Add next product
@@ -628,13 +650,19 @@ function Orders() {
               <div className="productSummaryRight">
                 <span className="totalCost">
                   Total price of products -{" "}
-                  {clientDetails.products.reduce((total, item)=> total + (item.itemPrice * item.amount), 0)}
+                  {clientDetails.products.reduce(
+                    (total, item) => total + item.itemPrice * item.amount,
+                    0
+                  )}
                   $
                 </span>
               </div>
             </div>
             <div className="submitNewOrder">
-              <button className="submitNewOrderBtn">
+              <button
+                className="submitNewOrderBtn"
+                onClick={() => addNewOrder()}
+              >
                 <AddCircleOutlineRoundedIcon />
                 <span className="addOrderText">Add</span>
               </button>
