@@ -17,38 +17,9 @@ function Clients() {
   const [buttonPopup, setButtonPopup] = useState(false);
   const [filterId, setFilterId] = useState("");
 
-
-   const handleSearchChange = (newFilteredData) => {
-     setFilteredData(newFilteredData);
-   };
-
-  useEffect(() => {
-    setNewOrderSubmitted(false);
-    axios
-      .get("http://localhost:5000/clients", { withCredentials: true })
-      .then((res) => {
-        if (res.data != null) {
-          setClientsData(
-            res.data[0].map((t1) => ({
-              ...t1,
-              ...res.data[1].find((t2) => t2.client_id === t1.client_id),
-            }))
-          );
-          setFilteredData(
-            res.data[0].map((t1) => ({
-              ...t1,
-              ...res.data[1].find((t2) => t2.client_id === t1.client_id),
-            }))
-          );
-        }
-      });
-  }, [newOrderSubmitted]);
-
- 
-  console.log("c", clientsData);
-  console.log("f", filteredData);
-
-  
+  const handleSearchChange = (newFilteredData) => {
+    setFilteredData(newFilteredData);
+  };
 
   const ClientsTable = () => {
     const [currentPage, setCurrentPage] = useState(1);
@@ -60,11 +31,16 @@ function Clients() {
     );
     const computedClientsLength = computedClients.length;
 
+    useEffect(()=>{
+      const fetchClient = async()=>{
+        const result = await axios.get('http://localhost:5000/getAllClients')
+      }
+      fetchClient()
+    })
+
     return (
       <>
-        {" "}
         <div className="tableResultsWrap">
-          {" "}
           <div className="resultsSpan">
             Showing
             <font className="resultsBold"> {computedClientsLength} </font>
@@ -127,32 +103,6 @@ function Clients() {
       postalCode: "",
       workerName: ctx.username,
     });
-
-    const addNewOrder = () => {
-      axios
-        .post(
-          "http://localhost:5000/newclient",
-          {
-            clientDetails,
-          },
-          { withCredentials: true }
-        )
-        .then((res) => {
-          if (res.data === "success") {
-            setClientDetails({
-              clientName: "",
-              clientDetails: "",
-              phone: "",
-              country: "Polska",
-              street: "",
-              city: "",
-              postalCode: "",
-              workerName: ctx.username,
-            });
-            setNewOrderSubmitted(true);
-          }
-        });
-    };
 
     return (
       <Popup trigger={buttonPopup} setTrigger={setButtonPopup}>
@@ -269,10 +219,7 @@ function Clients() {
 
           <div className="submitWrap">
             <div className="submitNewOrder">
-              <button
-                className="submitNewOrderBtn"
-                onClick={() => addNewOrder()}
-              >
+              <button className="submitNewOrderBtn">
                 <AddCircleOutlineRoundedIcon />
                 <span className="addOrderText">Add</span>
               </button>

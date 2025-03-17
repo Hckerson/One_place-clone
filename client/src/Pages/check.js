@@ -1,389 +1,167 @@
-import React, { useState, useEffect, useContext } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
-import "./Styles/order.css";
+import { Link } from "react-router-dom";
+import "./Styles/clients.css";
 import { AuthLoginInfo } from "./../AuthComponents/AuthLogin";
 import Popup from "../Components/Popup";
-import clsx from "clsx";
-import { useDebouncedCallback } from "use-debounce";
 import SearchBar from "../Components/SearchBar";
 import Pagination from "../Components/Pagination";
 import ReadMoreRoundedIcon from "@mui/icons-material/ReadMoreRounded";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
-import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
 
-function Orders() {
+function Clients() {
+  const ctx = useContext(AuthLoginInfo);
   const [newOrderSubmitted, setNewOrderSubmitted] = useState(false);
-  const [ordersData, setOrdersData] = useState([]);
+  const [clientsData, setClientsData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [buttonPopup, setButtonPopup] = useState(false);
-  const [filterOrders, setFilterOrders] = useState("");
   const [filterId, setFilterId] = useState("");
-  const [likelyProduct, setLikelyProduct] = useState([]);
-  const [filterActive, setFilterActive] = useState(1);
-  const [dropdown, setDropdown] = useState(false);
-  const [isNewClient, setIsNewClient] = useState(true);
-  const [displaySearch, setDisplaySearch] = useState(false);
-  const [oldClientId, setOldClientId] = useState(null);
-  const [stringSearch, setStringSearch] = useState("");
-  const [allClientsData, setAllClientsData] = useState([]);
-  const ctx = useContext(AuthLoginInfo);
 
-  const [clientDetails, setClientDetails] = useState({
-    clientName: "",
-    clientDetails: "",
-    phone: "",
-    country: "",
-    street: "",
-    city: "",
-    postalCode: "",
-    status: "",
-    products: [],
-    workerName: ctx.username,
-  });
-  const [productDetails, setProductDetails] = useState({
-    productName: "",
-    amount: 1,
-    itemPrice: 0,
-    totalPrice: 0,
-  });
+
+   const handleSearchChange = (newFilteredData) => {
+     setFilteredData(newFilteredData);
+   };
 
   useEffect(() => {
     setNewOrderSubmitted(false);
-    const fetchOrders = async () => {
-      const response = await axios.get("http://localhost:5000/orders", {
-        withCredentials: true,
+    axios
+      .get("http://localhost:5000/clients", { withCredentials: true })
+      .then((res) => {
+        if (res.data != null) {
+          setClientsData(
+            res.data[0].map((t1) => ({
+              ...t1,
+              ...res.data[1].find((t2) => t2.client_id === t1.client_id),
+            }))
+          );
+          setFilteredData(
+            res.data[0].map((t1) => ({
+              ...t1,
+              ...res.data[1].find((t2) => t2.client_id === t1.client_id),
+            }))
+          );
+        }
       });
-      const result = response.data;
-      setOrdersData(result);
-      setFilteredData(result);
-      try {
-      } catch (error) {
-        console.error("Error fetching data", error);
-      }
-    };
-    fetchOrders();
   }, [newOrderSubmitted]);
 
-  useEffect(() => {
-    const fetchClientData = async () => {
-      const response = await axios.get("http://localhost:5000/clients", {
-        withCredentials: true,
-      });
-      const result = response.data;
-      setAllClientsData(result);
-    };
-    fetchClientData();
-  });
+ 
+  console.log("c", clientsData);
+  console.log("f", filteredData);
 
-  useEffect(() => {}, []);
+  
 
-  const decideStatus = (orders) => {
-    if (orders.length < 1) {
-      setFilteredData(ordersData);
-    } else {
-      const filtered = ordersData.filter((order) => order.status === orders);
-      setFilteredData(filtered);
-    }
-  };
-  const handleSearchChange = (newFilteredData) => {
-    setFilteredData(newFilteredData);
-  };
-
-  const addNewOrder = async () => {
-    const response = await axios.post(
-      "http://localhost:5000/new_order",
-      { clientDetails, isNewClient, oldClientId },
-      { withCredentials: true }
+  const ClientsTable = () => {
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 30;
+    const totalClients = filteredData.length;
+    const computedClients = filteredData.slice(
+      (currentPage - 1) * itemsPerPage,
+      (currentPage - 1) * itemsPerPage + itemsPerPage
     );
-  };
+    const computedClientsLength = computedClients.length;
 
-  const fetchPrice = useDebouncedCallback(async (product) => {
-    const response = await axios.post(
-      "http://localhost:5000/get_price",
-      { productName: product },
-      { withCredentials: true }
-    );
-
-    if (product.lenth < 1) {
-      setLikelyProduct([]);
-    } else {
-      setLikelyProduct([...(response?.data?.likelyProduct ?? [])]);
-    }
-
-    const amount = response?.data?.price;
-    const result = Number(amount) ?? 0;
-    setProductDetails({
-      ...productDetails,
-      itemPrice: result,
-    });
-  }, 2000);
-
-  const removeProduct = (identifier) => {
-    console.log(identifier);
-    const updatedProductList = clientDetails.products.filter(
-      (_, index) => !index == identifier
-    );
-    setClientDetails({
-      ...clientDetails,
-      products: updatedProductList,
-    });
-  };
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 30;
-  const totalOrders = filteredData.length;
-  const computedOrders = filteredData.slice(
-    (currentPage - 1) * itemsPerPage,
-    (currentPage - 1) * itemsPerPage + itemsPerPage
-  );
-
-  const setSearchingInput = (
-    id,
-    client,
-    details,
-    phone,
-    country,
-    street,
-    postalCode,
-    city,
-    status
-  ) => {
-    setOldClientId(id);
-    setClientDetails({
-      ...clientDetails,
-      clientName: client,
-      clientDetails: details,
-      phone: phone,
-      country: country,
-      street: street,
-      postalCode: postalCode,
-      city: city,
-      status: status,
-    });
-    setDisplaySearch(false);
-    setStringSearch("");
-  };
-
-  return (
-    <div className="bodyWrap">
-      <div className="contentOrderWrap">
-        <div className="leftSide">
-          <h1>Orders</h1>
+    return (
+      <>
+        {" "}
+        <div className="tableResultsWrap">
+          {" "}
+          <div className="resultsSpan">
+            Showing
+            <font className="resultsBold"> {computedClientsLength} </font>
+            of
+            <font className="resultsBold"> {totalClients} </font>
+            results
+          </div>
           <Pagination
-            total={totalOrders}
+            total={totalClients}
             itemsPerPage={itemsPerPage}
             currentPage={currentPage}
             onPageChange={(page) => setCurrentPage(page)}
           />
-          <div className="orderNavWrap">
-            <ul className="flex space-x-4 py-2">
-              <button
-                className={clsx(
-                  "border-b-4 ",
-                  filterOrders === "" && "border-b-4 border-red-500"
-                )}
-                onClick={() => {
-                  setFilterOrders("");
-                  decideStatus("");
-                }}
-              >
-                All orders
-              </button>
-              <button
-                className={clsx(
-                  "border-b-4 ",
-                  filterOrders === "paid" && "border-b-4 border-red-500"
-                )}
-                onClick={() => {
-                  setFilterOrders("paid");
-                  decideStatus("paid");
-                }}
-              >
-                Paid
-              </button>
-              <button
-                className={clsx(
-                  "border-b-4 ",
-                  filterOrders === "pending" && "border-b-4 border-red-500"
-                )}
-                onClick={() => {
-                  setFilterOrders("pending");
-                  decideStatus("pending");
-                }}
-              >
-                Pending
-              </button>
-              <button
-                className={clsx(
-                  "border-b-4 ",
-                  filterOrders === "shipped" && "border-b-4 border-red-500"
-                )}
-                onClick={() => {
-                  setFilterOrders("shipped");
-                  decideStatus("shipped");
-                }}
-              >
-                Shipped
-              </button>
-            </ul>
-            <div className="addOrderWrap">
-              <SearchBar
-                data={ordersData}
-                filters={filterOrders}
-                handleSearchChange={handleSearchChange}
-                dataType="orders"
-              />
-              <button
-                className="addOrder"
-                onClick={() => {
-                  setButtonPopup(true);
-                  setIsNewClient(true);
-                }}
-              >
-                <AddCircleOutlineRoundedIcon />
-                <span className="addOrderText">Add</span>
-              </button>
-            </div>
-          </div>
-          <div className="orderWrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Order ID</th>
-                  <th>Client name</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                  <th>Price</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {computedOrders?.map((order) => {
-                  return (
-                    <tr key={order.id}>
-                      <td>
-                        <font className="maincolor">#</font>
-                        {order.id}
-                      </td>
-                      <td>{order.username}</td>
-                      <td>{order.date.split("T")[0]}</td>
-                      <td>{order.status}</td>
-                      <td>
-                        {order.price}
-                        zł
-                      </td>
-                      <td className="maincolor">
-                        <Link to={`/orders/${order.id}`}>
-                          <ReadMoreRoundedIcon />
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
         </div>
-      </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Client ID</th>
+              <th>Client name</th>
+              <th>Phone</th>
+              <th>City</th>
+              <th>Orders count</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {computedClients.map((client, i) => {
+              return (
+                <tr key={i}>
+                  <td>
+                    <font className="maincolor">#</font>
+                    {client.client_id}
+                  </td>
+                  <td>{client.client}</td>
+                  <td>{client.phone}</td>
+                  <td>{client.city}</td>
+                  <td>{client.ordersCount ? client.ordersCount : "0"}</td>
+                  <td className="maincolor">
+                    <Link to={`/clients/${client.client_id}`}>
+                      <ReadMoreRoundedIcon />
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </>
+    );
+  };
 
+  const AddClients = () => {
+    const [clientDetails, setClientDetails] = useState({
+      clientName: "",
+      clientDetails: "",
+      phone: "",
+      country: "Polska",
+      street: "",
+      city: "",
+      postalCode: "",
+      workerName: ctx.username,
+    });
+
+    const addNewOrder = () => {
+      axios
+        .post(
+          "http://localhost:5000/newclient",
+          {
+            clientDetails,
+          },
+          { withCredentials: true }
+        )
+        .then((res) => {
+          if (res.data === "success") {
+            setClientDetails({
+              clientName: "",
+              clientDetails: "",
+              phone: "",
+              country: "Polska",
+              street: "",
+              city: "",
+              postalCode: "",
+              workerName: ctx.username,
+            });
+            setNewOrderSubmitted(true);
+          }
+        });
+    };
+
+    return (
       <Popup trigger={buttonPopup} setTrigger={setButtonPopup}>
-        <div className="popupWrap h-[80vh]  -translate-y-20">
-          <div className="productSummary">
-            <h3 className="productSummaryLeft">Add new order</h3>
-            <div className="productSummaryRight newUserSwitch">
-              <h3>New client?</h3>
-              <input
-                type="radio"
-                name="rdo"
-                id="yes"
-                onChange={() => setIsNewClient(true)}
-                defaultChecked="defaultChecked"
-              />
-              <input
-                type="radio"
-                name="rdo"
-                id="no"
-                onChange={() => setIsNewClient(false)}
-              />
-              <div className="switch">
-                <label className="switchLabel " htmlFor="yes">
-                  Yes
-                </label>
-                <label className="switchLabel" htmlFor="no">
-                  No
-                </label>
-                <span></span>
-              </div>
-            </div>
+        <div className="popupWrap">
+          <div className="productsSummary">
+            <h3 className="productSummaryLeft">Add new client</h3>
           </div>
-          <div className="addNewOrderWrap">
-            {!isNewClient && (
-              <div className="autoCompleteWrap">
-                <input
-                  id="autoCompleteInput"
-                  placeholder="Search client..."
-                  type="text"
-                  autoComplete="off"
-                  value={stringSearch}
-                  onChange={(e) => {
-                    setStringSearch(e.target.value);
-                    if (e.target.value.length > 0) {
-                      setDisplaySearch(true);
-                    } else {
-                      setDisplaySearch(false);
-                    }
-                  }}
-                />{" "}
-                {displaySearch && (
-                  <ul className="bg-red-500 relative p-1 ">
-                    {allClientsData
-                      ?.filter((client) =>
-                        [
-                          client.client_id,
-                          client.client,
-                          client.clientdetails,
-                          client.phone,
-                          client.country,
-                          client.street,
-                          client.postalcode,
-                          client.city,
-                          client.status,
-                        ].some((r) =>
-                          r.toLowerCase().includes(stringSearch.toLowerCase())
-                        )
-                      )
-                      .map((val, i) => {
-                        return (
-                          <li
-                            onClick={() =>
-                              setSearchingInput(
-                                val.client_id,
-                                val.client,
-                                val.clientdetails,
-                                val.phone,
-                                val.country,
-                                val.street,
-                                val.postalcode,
-                                val.city,
-                                val.status
-                              )
-                            }
-                            className="autoCompleteOption"
-                            key={i}
-                          >
-                            <span>
-                              {val.client_id.substring(0, 8) + "..."}{" "}
-                            </span>
-                            <span>{val.client}</span>
-                          </li>
-                        );
-                      })}
-                  </ul>
-                )}
-              </div>
-            )}
 
+          <div className="addNewOrderWrap">
             <div className="addNewOrderForm">
               <div className="orderDetails">
                 <div className="input-group">
@@ -398,7 +176,6 @@ function Orders() {
                         clientName: e.target.value,
                       })
                     }
-                    disabled={!isNewClient}
                     required="required"
                   />
                   <input
@@ -412,14 +189,13 @@ function Orders() {
                         phone: e.target.value,
                       })
                     }
-                    disabled={!isNewClient}
                     required="required"
                   />
                 </div>
                 <div className="input-group">
                   <input
                     type="textarea"
-                    placeholder="Order details"
+                    placeholder="Client details"
                     className="orderDetailsInput"
                     value={clientDetails.clientDetails}
                     onChange={(e) =>
@@ -428,7 +204,6 @@ function Orders() {
                         clientDetails: e.target.value,
                       })
                     }
-                    disabled={!isNewClient}
                     required="required"
                   />
                 </div>
@@ -444,12 +219,11 @@ function Orders() {
                         country: e.target.value,
                       })
                     }
-                    disabled={!isNewClient}
                     required="required"
                   />
                   <input
                     type="text"
-                    placeholder="Street, house number"
+                    placeholder="Street, home/appartment number"
                     className="orderDetailsInput orderDetailsInputHalf"
                     value={clientDetails.street}
                     onChange={(e) =>
@@ -458,7 +232,6 @@ function Orders() {
                         street: e.target.value,
                       })
                     }
-                    disabled={!isNewClient}
                     required="required"
                   />
                 </div>
@@ -474,7 +247,6 @@ function Orders() {
                         city: e.target.value,
                       })
                     }
-                    disabled={!isNewClient}
                     required="required"
                   />
                   <input
@@ -488,178 +260,14 @@ function Orders() {
                         postalCode: e.target.value,
                       })
                     }
-                    disabled={!isNewClient}
                     required="required"
                   />
-                </div>
-                <div className="input-group">
-                  <select
-                    className="orderDetailsSelect"
-                    value={clientDetails.status}
-                    onChange={(e) =>
-                      setClientDetails({
-                        ...clientDetails,
-                        status: e.target.value,
-                      })
-                    }
-                    required="required"
-                  >
-                    <option value="" disabled>
-                      Select Status
-                    </option>
-                    <option value={"paid"}>Paid</option>
-                    <option value={"pending"}>Pending</option>
-                    <option value={"shipped"}>Shipped</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="productDetails">
-                <div className="newOrderTable">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Product name</th>
-                        <th>Amount</th>
-                        <th>Price</th>
-                        <th>Total price</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td className="relative">
-                          <input
-                            type="text"
-                            placeholder="Product name"
-                            className="productDetailsInput"
-                            value={productDetails.productName}
-                            onChange={(e) => {
-                              setProductDetails({
-                                ...productDetails,
-                                productName: e.target.value,
-                              });
-                              if (e.target.value.length > 0) {
-                                setDropdown(true);
-                              } else {
-                                setDropdown(false);
-                              }
-
-                              fetchPrice(e.target.value);
-                            }}
-                            required="required"
-                          />
-                          <ul className="flex flex-col space-y-9 translate-y-1 w-full">
-                            {dropdown &&
-                              likelyProduct?.map((name, index) => {
-                                return (
-                                  <li
-                                    key={index}
-                                    onClick={() => {
-                                      setProductDetails({
-                                        ...productDetails,
-                                        productName: name.product,
-                                      });
-                                      fetchPrice(name.product);
-                                      setDropdown(false);
-                                    }}
-                                    className="absolute top-full w-full cursor-pointer  bg-stone-200 p-1  rounded-lg"
-                                  >
-                                    {name.product}
-                                  </li>
-                                );
-                              })}
-                          </ul>
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            placeholder="1"
-                            className="productDetailsInput"
-                            value={productDetails.amount}
-                            onChange={(e) =>
-                              setProductDetails({
-                                ...productDetails,
-                                amount: Number(e.target.value),
-                              })
-                            }
-                            required="required"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            className="productDetailsInput"
-                            value={productDetails.itemPrice}
-                            onChange={() => {
-                              setProductDetails({
-                                ...productDetails,
-                                itemPrice: Number(productDetails.itemPrice),
-                              });
-                            }}
-                          />
-                        </td>
-                        <td>
-                          {productDetails.itemPrice * productDetails.amount ||
-                            `0`}
-                        </td>
-                      </tr>
-                      {clientDetails.products.map((product, key) => {
-                        return (
-                          <tr key={key}>
-                            <td>{product.productName}</td>
-                            <td>{product.amount}</td>
-                            <td>{product.itemPrice}</td>
-                            <td>{product.amount * product.itemPrice}</td>
-                            <td
-                              className="removeProduct"
-                              onClick={() => removeProduct(key)}
-                            >
-                              <RemoveRoundedIcon />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="submitWrap">
-            <div className="productSummary">
-              <div className="productSummaryLeft">
-                <span
-                  className="addNewLine"
-                  onClick={() => {
-                    setClientDetails({
-                      ...clientDetails,
-                      products: [...clientDetails.products, productDetails],
-                    });
-                    setProductDetails({
-                      productName: "",
-                      amount: 1,
-                      itemPrice: 0,
-                      totalPrice: 0,
-                    });
-                  }}
-                >
-                  + Add next product
-                </span>
-              </div>
-              <div className="productSummaryRight">
-                <span className="totalCost">
-                  Total price of products -{" "}
-                  {clientDetails.products.reduce(
-                    (total, product) =>
-                      total + product.itemPrice * product.amount,
-                    0
-                  )}
-                  $
-                </span>
-              </div>
-            </div>
             <div className="submitNewOrder">
               <button
                 className="submitNewOrderBtn"
@@ -672,8 +280,41 @@ function Orders() {
           </div>
         </div>
       </Popup>
+    );
+  };
+
+  return (
+    <div className="bodyWrap">
+      <div className="contentOrderWrap clientsTableWrap">
+        <div className="leftSide">
+          <h1>Clients</h1>
+          <div className="orderNavWrap">
+            <div className="addOrderWrap">
+              <SearchBar
+                data={clientsData}
+                handleSearchChange={handleSearchChange}
+                dataType="clients"
+              />
+              <button
+                className="addOrder"
+                onClick={() => {
+                  setButtonPopup(true);
+                }}
+              >
+                <AddCircleOutlineRoundedIcon />
+                <span className="addOrderText">Add</span>
+              </button>
+            </div>
+          </div>
+          <div className="orderWrap">
+            <ClientsTable />
+          </div>
+        </div>
+      </div>
+
+      <AddClients />
     </div>
   );
 }
 
-export default Orders;
+export default Clients;

@@ -18,8 +18,6 @@ function Orders() {
   const [filteredData, setFilteredData] = useState([]);
   const [buttonPopup, setButtonPopup] = useState(false);
   const [filterOrders, setFilterOrders] = useState("");
-  const [filterId, setFilterId] = useState("");
-  const [filterActive, setFilterActive] = useState(1);
   const [isNewClient, setIsNewClient] = useState(true);
   const [likelyProduct, setLikelyProduct] = useState([]);
   const [dropdown, setDropdown] = useState(false);
@@ -107,6 +105,24 @@ function Orders() {
       { clientDetails, isNewClient, oldClientId },
       { withCredentials: true }
     );
+    setClientDetails({
+      clientName: "",
+      clientDetails: "",
+      phone: "",
+      country: "",
+      street: "",
+      city: "",
+      postalCode: "",
+      status: "",
+      products: [],
+      workerName: ctx.username,
+    });
+    setProductDetails({
+      productName: "",
+      amount: 1,
+      itemPrice: 0,
+      totalPrice: 0,
+    });
   };
 
   const handleSearchChange = (newFilteredData) => {
@@ -660,7 +676,10 @@ function Orders() {
             </div>
             <div className="submitNewOrder">
               <button
-                className="submitNewOrderBtn"
+                className={clsx("w-full box-border rounded-xl p-2", {
+                  "bg-[#ef5f63]": clientDetails.products.length > 0,
+                  "bg-red-400/25": clientDetails.products.length < 1,
+                })}
                 onClick={() => addNewOrder()}
               >
                 <AddCircleOutlineRoundedIcon />

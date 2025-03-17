@@ -13,7 +13,7 @@ const client = new Pool({
 export async function getDashboardData() {
   const clientData = await client.query("SELECT * FROM clients ");
   const orderData = await client.query(
-    "SELECT * FROM orders as o  INNER JOIN clients as c ON o.client_id = c.client_id WHERE o.status = 'paid'"
+    "SELECT * FROM orders as o  INNER JOIN clients as c ON o.client_id = c.client_id WHERE o.status IN ('paid', 'shipped')"
   );
   const calendarData = await client.query(
     "SELECT * FROM calendar WHERE deadlinedate >= CURRENT_DATE AND deadlinedate < CURRENT_DATE + INTERVAL '6 days'  order by deadlinedate asc LIMIT 2"
