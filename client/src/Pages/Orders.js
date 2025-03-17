@@ -46,6 +46,9 @@ function Orders() {
     totalPrice: 0,
   });
 
+  // useEffect(()=>{
+  //   console.log('Filtered', filteredData);
+  // }, [filteredData])
   useEffect(() => {
     setNewOrderSubmitted(false);
     const fetchOrders = async () => {
@@ -105,24 +108,6 @@ function Orders() {
       { clientDetails, isNewClient, oldClientId },
       { withCredentials: true }
     );
-    setClientDetails({
-      clientName: "",
-      clientDetails: "",
-      phone: "",
-      country: "",
-      street: "",
-      city: "",
-      postalCode: "",
-      status: "",
-      products: [],
-      workerName: ctx.username,
-    });
-    setProductDetails({
-      productName: "",
-      amount: 1,
-      itemPrice: 0,
-      totalPrice: 0,
-    });
   };
 
   const handleSearchChange = (newFilteredData) => {
@@ -680,7 +665,28 @@ function Orders() {
                   "bg-[#ef5f63]": clientDetails.products.length > 0,
                   "bg-red-400/25": clientDetails.products.length < 1,
                 })}
-                onClick={() => addNewOrder()}
+                disabled={clientDetails.products.length < 1}
+                onClick={() => {
+                  addNewOrder();
+                  setClientDetails({
+                    clientName: "",
+                    clientDetails: "",
+                    phone: "",
+                    country: "",
+                    street: "",
+                    city: "",
+                    postalCode: "",
+                    status: "",
+                    products: [],
+                    workerName: ctx.username,
+                  });
+                  setProductDetails({
+                    productName: "",
+                    amount: 1,
+                    itemPrice: 0,
+                    totalPrice: 0,
+                  });
+                }}
               >
                 <AddCircleOutlineRoundedIcon />
                 <span className="addOrderText">Add</span>

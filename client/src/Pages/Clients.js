@@ -16,6 +16,13 @@ function Clients() {
   const [filteredData, setFilteredData] = useState([]);
   const [buttonPopup, setButtonPopup] = useState(false);
   const [filterId, setFilterId] = useState("");
+  useEffect(()=>{
+    const fetchClient = async()=>{
+      const result = await axios.get('http://localhost:5000/getAllClients')
+      setClientsData(result.data)
+    }
+    fetchClient()
+  })
 
   const handleSearchChange = (newFilteredData) => {
     setFilteredData(newFilteredData);
@@ -31,12 +38,7 @@ function Clients() {
     );
     const computedClientsLength = computedClients.length;
 
-    useEffect(()=>{
-      const fetchClient = async()=>{
-        const result = await axios.get('http://localhost:5000/getAllClients')
-      }
-      fetchClient()
-    })
+
 
     return (
       <>

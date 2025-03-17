@@ -15,7 +15,16 @@ import { createRequire } from "module";
 import "dotenv/config";
 const require = createRequire(import.meta.url);
 const pgSession = require("connect-pg-simple")(expressSession);
-import { getDashboardData, getAllOrders, getAllClientWithOrders, getProductPrice, addNewClient, addNewOrder } from "./queries.js";
+import {
+  getDashboardData,
+  getAllOrders,
+  getAllClientWithOrders,
+  getProductPrice,
+  addNewClient,
+  addNewOrder,
+  getAllOrderOfId,
+  getAllClients,
+} from "./queries.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -80,7 +89,10 @@ app.post("/register", async (req, res) => {
   try {
     const { username, password, email } = req.body;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    const checkUser = await client.query('SELECT * FROM accounts WHERE email = $1', [email]);
+    const checkUser = await client.query(
+      "SELECT * FROM accounts WHERE email = $1",
+      [email]
+    );
     if (checkUser.rows.length > 0) {
       return res.json({ message: "User already exists" });
     }
@@ -103,23 +115,43 @@ app.post("/register", async (req, res) => {
   }
 });
 
-app.get('/orders', async (req, res) => {
+app.post("/getAllOrderOfId", async(req, res)=>{
+  const {orderId} = req.body
+  try {
+    const repsonse = await getAllOrderOfId(orderId);
+    res.json(repsonse);
+  } catch (error) {
+    console.error("Failded to get associating products", error);
+  }
+})
+
+app.get("/orders", async (req, res) => {
   try {
     const orders = await getAllOrders();
     res.json(orders);
   } catch (error) {
-    console.error('Failed to get orders', error); 
+    console.error("Failed to get orders", error);
   }
-})
+});
 
-app.get("/clients", async (req, res)=>{
+app.get("/clients", async (req, res) => {
   try {
     const result = await getAllClientWithOrders();
     res.json(result);
   } catch (error) {
     console.error("Failed to get clients", error);
   }
-})
+});
+
+/*Go continue later, stopping clients to continue order page*/
+app.get("/getAllClients", async (req, res) => {
+  try {
+    const result = await getAllClients();
+    res.json(result);
+  } catch (error) {
+    console.error("Failed to get clients", error);
+  }
+});
 
 app.get("/dashboard_data", async (req, res) => {
   try {
@@ -130,30 +162,30 @@ app.get("/dashboard_data", async (req, res) => {
   }
 });
 
-app.post('/new_order', async (req, res)=>{
-  const account_id = req.user.id
-  const item = await req.body
-  console.log(JSON.stringify(item, null, 2))
-  const {clientDetails,isNewClient, oldClientId } = req.body
-  if(isNewClient){
-    try { 
+app.post("/new_order", async (req, res) => {
+  const account_id = req.user.id;
+  const item = await req.body;
+  console.log(JSON.stringify(item, null, 2));
+  const { clientDetails, isNewClient, oldClientId } = req.body;
+  if (isNewClient) {
+    try {
       addNewClient(clientDetails, account_id);
     } catch (error) {
-      console.error('Error setting up new client', error)
+      console.error("Error setting up new client", error);
     }
-  }else{
+  } else {
     try {
-      const product = clientDetails.products
-      const status = clientDetails.status
-      addNewOrder( oldClientId, product, status) 
+      const product = clientDetails.products;
+      const status = clientDetails.status;
+      addNewOrder(oldClientId, product, status);
     } catch (error) {
-      console.error('Error creating order for existing client', error)
+      console.error("Error creating order for existing client", error);
     }
   }
-})
+});
 
 app.post("/get_price", async (req, res) => {
-  const {productName} = req.body
+  const { productName } = req.body;
   try {
     const result = await getProductPrice(productName);
     res.json(result);
@@ -169,8 +201,7 @@ app.get("/logout", (req, res) => {
 
 app.get("/user", (req, res) => {
   if (!req.isAuthenticated()) {
-    res.send({ message: "Not Authenticated" });
-    return;
+    return
   }
   return res.json(req.user);
 });

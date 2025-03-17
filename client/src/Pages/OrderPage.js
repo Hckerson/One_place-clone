@@ -11,9 +11,7 @@ function OrderPage() {
   const [buttonPopup, setButtonPopup] = useState(false);
   const [orderUpdated, setOrderUpdated] = useState(false);
   const [deletedItems, setDeletedItems] = useState({ ids: [] });
-
   const [clientDetails, setClientDetails] = useState({});
-
   const [productDetails, setProductDetails] = useState({
     productName: "",
     amount: 1,
@@ -21,56 +19,16 @@ function OrderPage() {
     totalPrice: 0,
   });
 
-  useEffect(() => {
-    axios
-      .get(`http://localhost:5000/order_by_id?id=${orderId}&type=single`, {
-        withCredentials: true,
-      })
-      .then((res) => {
-        if (res.data != null) {
-          setOrderUpdated(false);
-          setOrderData({
-            order: res.data[0],
-            products: res.data[1],
-            client: res.data[2],
-          });
-        }
-      });
-  }, [orderUpdated]);
-
-  const removeProduct = (id) => {
-    let array = clientDetails.products;
-    const newList = array.filter((item) => item.id !== id);
-
-    if (id !== -1) {
-      setClientDetails({
-        ...clientDetails,
-        products: newList,
-      });
-      setDeletedItems({
-        ...deletedItems,
-        ids: [...deletedItems.ids, id],
-      });
+  useEffect(()=>{
+    const fetchAllProductsOfId = async () => {
+      const response = await axios.post("http://localhost:5000/getAllOrderOfId", { orderId }, { withCredentials: true });
+      const result = response.data;
+      setOrderData(result);
     }
-  };
+    fetchAllProductsOfId();
+  })
 
-  const saveOrderChanges = () => {
-    axios
-      .post(
-        "http://localhost:5000/updateorder",
-        {
-          clientDetails,
-          orderId,
-          deletedItems,
-        },
-        { withCredentials: true }
-      )
-      .then((res) => {
-        if (res.data === "success") {
-          setOrderUpdated(true);
-        }
-      });
-  };
+
 
   const OrderPageHeaderSection = () => {
     return (
@@ -213,7 +171,7 @@ function OrderPage() {
 
   const OrderShippmentSection = () => {
     return (
-      <div className="orderDetails deliveryDetails">
+      <div className="orderDetails ">
         <h3 className="summaryHeader">Shippment address</h3>
         <div className="orderDetailsRow">
           <font className="bold">Country:</font>
@@ -239,13 +197,13 @@ function OrderPage() {
     <div className="bodyWrap">
       <div className="orderPageContentWrap">
         <OrderPageHeaderSection />
-        <div className="orderPageSection">
+        <div className="orderPageSection py-2 relative box-border ">
           <div className="orderPageLeftSide">
             <ProductsSummaryTable />
             <OrderDetailsSection />
           </div>
 
-          <div className="orderPageRightSide">
+          <div className="orderPageRightSide overflow-y-scroll scrollbar-hide">
             <UserColumnSection />
             <OrderSummarySection />
             <OrderShippmentSection />
@@ -498,7 +456,6 @@ function OrderPage() {
                             <td>{product2.amount * product2.itemPrice}</td>
                             <td
                               className="removeProduct"
-                              onClick={() => removeProduct(product2.id)}
                             >
                               -
                             </td>
@@ -541,7 +498,6 @@ function OrderPage() {
             <div className="submitNewOrder">
               <button
                 className="submitNewOrderBtn"
-                onClick={() => saveOrderChanges()}
               >
                 <span className="addOrderText">Save changes</span>
               </button>

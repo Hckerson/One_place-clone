@@ -27,6 +27,15 @@ export async function getDashboardData() {
   };
 }
 
+export async function getAllOrderOfId(orderId) {
+  try {
+    const response = await client.query('SELECT o.id, c.client, c.phone , p.amount, p.itemprice, p.totalprice FROM orders as o INNER JOIN products as p ON o.id = p.order_id INNER JOIN clients as c ON  o.client_id = c.client_id WHERE o.id = $1', [orderId])
+    return response.rows
+  } catch (error) {
+    console.error("Failed to fetch associating products from database", error)
+  }
+}
+
 export async function getAllOrders() {
   try {
     const allOrders = await client.query(
@@ -63,8 +72,8 @@ export async function addNewClient(details, account_id) {
       postalCode,
     ]
   );
-  const id = result.rows[0].client_id;
-  addNewOrder(id, products, status);
+  // const id = result.rows[0].client_id;
+  // addNewOrder(id, products, status);
 }
 
 export async function addNewOrder(client_id, product, status) {
@@ -135,5 +144,14 @@ export async function getAllClientWithOrders() {
     return allClientsWithOrders.rows;
   } catch (error) {
     console.error("Failed to query clietn from database", error);
+  }
+}
+
+export async function getAllClients() {
+  try {
+    const response = await client.query('SELECT * FROM clients')  
+    return response.rows
+  } catch (error) {
+    console.error('Failed to get clients', error)
   }
 }
