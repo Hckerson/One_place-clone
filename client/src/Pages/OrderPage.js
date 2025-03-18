@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import clsx from "clsx";
 import { useDebouncedCallback } from "use-debounce";
 import "./Styles/orderPage.css";
 import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
@@ -65,10 +66,30 @@ function OrderPage() {
           workerName: result.order[0].workername,
         };
       });
+      for (let i = 0; i < result.order.length; i++) {
+        setClientDetails((prev) => {
+          return {
+            ...prev,
+            products: [
+              ...prev.products,
+              {
+                productName: result.order[i].productname,
+                amount: result.order[i].amount,
+                itemPrice: result.order[i].itemprice,
+                totalPrice: result.order[i].totalprice,
+              },
+            ],
+          };
+        });
+      }
     };
     fetchExistingOrderOfId();
     fetchAllProductsOfId();
   }, []);
+
+  const updateOrder = async () => {
+    return;
+  };
 
   const fetchPrice = useDebouncedCallback(async (product) => {
     const response = await axios.post(
@@ -547,6 +568,12 @@ function OrderPage() {
                       ...clientDetails,
                       products: [...clientDetails.products, productDetails],
                     });
+                    setProductDetails({
+                      productName: "",
+                      amount: 1,
+                      itemPrice: 0,
+                      totalPrice: 0,
+                    });
                   }}
                 >
                   + Add next product
@@ -559,13 +586,40 @@ function OrderPage() {
                     (a, b) => a + (b.itemPrice * b.amount || 0),
                     0
                   )}
-                  zł
+                  $
                 </span>
               </div>
             </div>
             <div className="submitNewOrder">
-              <button className="submitNewOrderBtn">
-                <span className="addOrderText">Save changes</span>
+              <button
+                className={clsx("w-full box-border rounded-xl p-2", {
+                  "bg-[#ef5f63]": clientDetails.products.length > 0,
+                  "bg-red-400/25": clientDetails.products.length < 1,
+                })}
+                disabled={clientDetails.products.length < 1}
+                onClick={() => {
+                  updateOrder();
+                  setClientDetails({
+                    clientName: "",
+                    clientDetails: "",
+                    phone: "",
+                    country: "",
+                    street: "",
+                    city: "",
+                    postalCode: "",
+                    status: "",
+                    products: [],
+                    workerName: "",
+                  });
+                  setProductDetails({
+                    productName: "",
+                    amount: 1,
+                    itemPrice: 0,
+                    totalPrice: 0,
+                  });
+                }}
+              >
+                <span className="addOrderText">Save Changes</span>
               </button>
             </div>
           </div>
