@@ -29,10 +29,13 @@ export async function getDashboardData() {
 
 export async function getAllOrderOfId(orderId) {
   try {
-    const response = await client.query('SELECT o.id, c.client, c.phone , p.amount, p.itemprice, p.totalprice FROM orders as o INNER JOIN products as p ON o.id = p.order_id INNER JOIN clients as c ON  o.client_id = c.client_id WHERE o.id = $1', [orderId])
-    return response.rows
+    const response = await client.query(
+      "SELECT o.workername, o.status, o.date, o.price, c.country, c.city, c.postalcode, c.street, c.client, c.phone, c.clientdetails , p.amount, p.productname,  p.itemprice, p.totalprice FROM orders as o INNER JOIN products as p ON o.id = p.order_id INNER JOIN clients as c ON  o.client_id = c.client_id WHERE o.id = $1",
+      [orderId]
+    );
+    return response.rows;
   } catch (error) {
-    console.error("Failed to fetch associating products from database", error)
+    console.error("Failed to fetch associating products from database", error);
   }
 }
 
@@ -72,8 +75,36 @@ export async function addNewClient(details, account_id) {
       postalCode,
     ]
   );
-  // const id = result.rows[0].client_id;
-  // addNewOrder(id, products, status);
+  const id = result.rows[0].client_id;
+  addNewOrder(id, products, status);
+}
+
+export async function fetchExistingOrderOfId(order_id) {
+  try {
+    const result = await fetchClientDataRelatingToOrder(order_id);
+    const response = await client.query(
+      "SELECT  o.price, o.status, o.workername, p.productname, p.amount, p.itemprice, p.totalprice FROM orders as o INNER JOIN products as p ON o.id = p.order_id WHERE o.id = $1",
+      [order_id]
+    );
+    return {
+      client: result,
+      order: response.rows,
+    };
+  } catch (error) {
+    console.error("Error fetching exiting order of id", error);
+  }
+}
+
+export async function fetchClientDataRelatingToOrder(order_id) {
+  try {
+    const response = await client.query(
+      "SELECT * FROM clients WHERE client_id = (SELECT client_id FROM orders WHERE id = $1)",
+      [order_id]
+    );
+    return response.rows;
+  } catch (error) {
+    console.error("Error fetching client of id", error);
+  }
 }
 
 export async function addNewOrder(client_id, product, status) {
@@ -149,9 +180,9 @@ export async function getAllClientWithOrders() {
 
 export async function getAllClients() {
   try {
-    const response = await client.query('SELECT * FROM clients')  
-    return response.rows
+    const response = await client.query("SELECT * FROM clients");
+    return response.rows;
   } catch (error) {
-    console.error('Failed to get clients', error)
+    console.error("Failed to get clients", error);
   }
 }

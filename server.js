@@ -24,6 +24,7 @@ import {
   addNewOrder,
   getAllOrderOfId,
   getAllClients,
+  fetchExistingOrderOfId
 } from "./queries.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -115,15 +116,6 @@ app.post("/register", async (req, res) => {
   }
 });
 
-app.post("/getAllOrderOfId", async(req, res)=>{
-  const {orderId} = req.body
-  try {
-    const repsonse = await getAllOrderOfId(orderId);
-    res.json(repsonse);
-  } catch (error) {
-    console.error("Failded to get associating products", error);
-  }
-})
 
 app.get("/orders", async (req, res) => {
   try {
@@ -143,6 +135,25 @@ app.get("/clients", async (req, res) => {
   }
 });
 
+app.post("/getAllOrderOfId", async(req, res)=>{
+  const {orderId} = req.body
+  try {
+    const repsonse = await getAllOrderOfId(orderId);
+    res.json(repsonse);
+  } catch (error) {
+    console.error("Failded to get associating products", error);
+  }
+})
+
+app.post("/fetchExistingOrderOfId", async (req, res)=>{
+  const {orderId} = req.body;
+  try {
+    const response = await fetchExistingOrderOfId(orderId);
+    res.json(response);
+  } catch (error) {
+    console.error("Error fetching existing order", error);
+  }
+})
 /*Go continue later, stopping clients to continue order page*/
 app.get("/getAllClients", async (req, res) => {
   try {
@@ -165,7 +176,6 @@ app.get("/dashboard_data", async (req, res) => {
 app.post("/new_order", async (req, res) => {
   const account_id = req.user.id;
   const item = await req.body;
-  console.log(JSON.stringify(item, null, 2));
   const { clientDetails, isNewClient, oldClientId } = req.body;
   if (isNewClient) {
     try {

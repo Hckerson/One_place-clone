@@ -75,7 +75,7 @@ function Orders() {
       setAllClientsData(result);
     };
     fetchClientData();
-  });
+  }, []);
 
   useEffect(() => {}, [ordersData, displaySearch]);
 
@@ -99,7 +99,19 @@ function Orders() {
     setClientDetails({
       ...clientDetails,
       products: updatedProductList,
+    });  const removeProduct = (identifier) => {
+    console.log(identifier);
+
+    // Use filter to create a new array without the item to remove
+    const updatedProductList = clientDetails.products.filter(
+      (_, index) => index !== identifier
+    );
+
+    setClientDetails({
+      ...clientDetails,
+      products: updatedProductList,
     });
+  };
   };
 
   const addNewOrder = async () => {
@@ -274,7 +286,7 @@ function Orders() {
                       <td>{order.status}</td>
                       <td>
                         {order.price}
-                        zł
+                        $
                       </td>
                       <td className="maincolor">
                         <Link to={`/orders/${order.id}`}>
