@@ -22,9 +22,9 @@ import {
   getProductPrice,
   addNewClient,
   addNewOrder,
-  getAllOrderOfId,
   getAllClients,
-  fetchExistingOrderOfId
+  fetchExistingOrderOfId,
+  updateExistingOrder
 } from "./queries.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -135,15 +135,6 @@ app.get("/clients", async (req, res) => {
   }
 });
 
-app.post("/getAllOrderOfId", async(req, res)=>{
-  const {orderId} = req.body
-  try {
-    const repsonse = await getAllOrderOfId(orderId);
-    res.json(repsonse);
-  } catch (error) {
-    console.error("Failded to get associating products", error);
-  }
-})
 
 app.post("/fetchExistingOrderOfId", async (req, res)=>{
   const {orderId} = req.body;
@@ -175,7 +166,6 @@ app.get("/dashboard_data", async (req, res) => {
 
 app.post("/new_order", async (req, res) => {
   const account_id = req.user.id;
-  const item = await req.body;
   const { clientDetails, isNewClient, oldClientId } = req.body;
   if (isNewClient) {
     try {
@@ -193,6 +183,15 @@ app.post("/new_order", async (req, res) => {
     }
   }
 });
+
+app.post("/update_order", async (req, res) => {
+  const { clientDetails, orderId, client_id, deletedItems} = req.body;
+  try {
+    updateExistingOrder(clientDetails, orderId, client_id, deletedItems)
+  } catch (error) {
+    console.error("Error updating order", error);
+  }
+})
 
 app.post("/get_price", async (req, res) => {
   const { productName } = req.body;

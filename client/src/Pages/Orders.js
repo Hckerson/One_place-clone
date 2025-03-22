@@ -99,19 +99,20 @@ function Orders() {
     setClientDetails({
       ...clientDetails,
       products: updatedProductList,
-    });  const removeProduct = (identifier) => {
-    console.log(identifier);
-
-    // Use filter to create a new array without the item to remove
-    const updatedProductList = clientDetails.products.filter(
-      (_, index) => index !== identifier
-    );
-
-    setClientDetails({
-      ...clientDetails,
-      products: updatedProductList,
     });
-  };
+    const removeProduct = (identifier) => {
+      console.log(identifier);
+
+      // Use filter to create a new array without the item to remove
+      const updatedProductList = clientDetails.products.filter(
+        (_, index) => index !== identifier
+      );
+
+      setClientDetails({
+        ...clientDetails,
+        products: updatedProductList,
+      });
+    };
   };
 
   const addNewOrder = async () => {
@@ -284,10 +285,7 @@ function Orders() {
                       <td>{order.username}</td>
                       <td>{order.date.split("T")[0]}</td>
                       <td>{order.status}</td>
-                      <td>
-                        {order.price}
-                        $
-                      </td>
+                      <td>${order.price}</td>
                       <td className="maincolor">
                         <Link to={`/orders/${order.id}`}>
                           <ReadMoreRoundedIcon />
@@ -303,10 +301,10 @@ function Orders() {
       </div>
 
       <Popup trigger={buttonPopup} setTrigger={setButtonPopup}>
-        <div className="popupWrap h-[80vh]  -translate-y-20">
+        <div className="popupWrap h-[80vh]  ">
           <div className="productSummary">
             <h3 className="productSummaryLeft">Add new order</h3>
-            <div className="productSummaryRight newUserSwitch">
+            <div className="absolute top-4 right-10 newUserSwitch">
               <h3>New client?</h3>
               <input
                 type="radio"
@@ -662,12 +660,11 @@ function Orders() {
               </div>
               <div className="productSummaryRight">
                 <span className="totalCost">
-                  Total price of products -{" "}
+                  Total price of products - $
                   {clientDetails.products.reduce(
                     (total, item) => total + item.itemPrice * item.amount,
                     0
                   )}
-                  $
                 </span>
               </div>
             </div>

@@ -1,19 +1,37 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import clsx from "clsx";
+import { useDebouncedCallback } from "use-debounce";
 import "./Styles/orderPage.css";
+import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
 import Popup from "../Components/Popup";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 
 function OrderPage() {
   const { orderId } = useParams();
-  const [orderData, setOrderData] = useState({});
   const [buttonPopup, setButtonPopup] = useState(false);
+  const [dropdown, setDropdown] = useState(false);
+  const [likelyProduct, setLikelyProduct] = useState([]);
   const [orderUpdated, setOrderUpdated] = useState(false);
   const [deletedItems, setDeletedItems] = useState({ ids: [] });
-
-  const [clientDetails, setClientDetails] = useState({});
-
+  const [supplementary, setSupplementary] = useState({
+    id : "",
+    total : 0,
+    date : ""
+  });
+  const [clientDetails, setClientDetails] = useState({
+    clientName: "",
+    clientDetails: "",
+    phone: "",
+    country: "",
+    street: "",
+    city: "",
+    postalCode: "",
+    status: "",
+    products: [],
+    workerName: "",
+  });
   const [productDetails, setProductDetails] = useState({
     productName: "",
     amount: 1,
@@ -22,62 +40,108 @@ function OrderPage() {
   });
 
   useEffect(() => {
-    axios
-      .get(`http://localhost:5000/order_by_id?id=${orderId}&type=single`, {
-        withCredentials: true,
-      })
-      .then((res) => {
-        if (res.data != null) {
-          setOrderUpdated(false);
-          setOrderData({
-            order: res.data[0],
-            products: res.data[1],
-            client: res.data[2],
-          });
-        }
-      });
-  }, [orderUpdated]);
-
-  const removeProduct = (id) => {
-    let array = clientDetails.products;
-    const newList = array.filter((item) => item.id !== id);
-
-    if (id !== -1) {
-      setClientDetails({
-        ...clientDetails,
-        products: newList,
-      });
-      setDeletedItems({
-        ...deletedItems,
-        ids: [...deletedItems.ids, id],
-      });
-    }
-  };
-
-  const saveOrderChanges = () => {
-    axios
-      .post(
-        "http://localhost:5000/updateorder",
-        {
-          clientDetails,
-          orderId,
-          deletedItems,
-        },
+    const fetchExistingOrderOfId = async () => {
+      const response = await axios.post(
+        "http://localhost:5000/fetchExistingOrderOfId",
+        { orderId },
         { withCredentials: true }
-      )
-      .then((res) => {
-        if (res.data === "success") {
-          setOrderUpdated(true);
+      );
+      const result = response.data;
+      setSupplementary((prev) => {
+        return{
+          ...prev,
+          id : result.client[0].client_id,
+          total : result.order[0].price,
+          date : result.client[0].clientdatecreated
         }
+      })
+      setClientDetails((prev) => {
+        return {
+          ...prev,
+          clientName: result.client[0].client,
+          clientDetails: result.client[0].clientdetails,
+          phone: result.client[0].phone,
+          country: result.client[0].country,
+          street: result.client[0].street,
+          city: result.client[0].city,
+          postalCode: result.client[0].postalcode,
+          status: result.order[0].status,
+          workerName: result.order[0].workername,
+        };
       });
+      for (let i = 0; i < result.order.length; i++) {
+        setClientDetails((prev) => {
+          return {
+            ...prev,
+            products: [
+              ...prev.products,
+              {
+                productName: result.order[i].productname,
+                amount: result.order[i].amount,
+                itemPrice: result.order[i].itemprice,
+                totalPrice: result.order[i].totalprice,
+              },
+            ],
+          };
+        });
+      }
+    };
+    fetchExistingOrderOfId();
+  }, []);
+
+  const fetchPrice = useDebouncedCallback(async (product) => {
+    const response = await axios.post(
+      "http://localhost:5000/get_price",
+      { productName: product },
+      { withCredentials: true }
+    );
+    if (product.lenth < 1) {
+      setLikelyProduct([]);
+    } else {
+      setLikelyProduct([...(response?.data?.likelyProduct ?? [])]);
+    }
+    const amount = response?.data?.price;
+    const result = Number(amount) || 0;
+    setProductDetails({
+      ...productDetails,
+      itemPrice: result,
+    });
+  }, 2000);
+
+  const updateOrder = async () => {
+    const client_id = supplementary.id
+    await axios.post(
+      "http://localhost:5000/update_order",
+      { clientDetails, orderId, client_id  },
+      { withCredentials: true }
+    );
+    setOrderUpdated(true);
   };
+
+  const removeProduct = (identifier) => {
+    console.log(identifier);
+
+    // Use filter to create a new array without the item to remove
+    const updatedProductList = clientDetails.products.filter(
+      (_, index) => index !== identifier
+    );
+
+    setClientDetails({
+      ...clientDetails,
+      products: updatedProductList,
+    });
+  };
+
+  useEffect(() => {
+    console.log("order", clientDetails);
+  }, [clientDetails]);
 
   const OrderPageHeaderSection = () => {
     return (
       <div className="orderPageHeader">
         <h1>
           Order
-          <font className="maincolor">#{orderId}</font>
+          <font className="maincolor pl-3">#{orderId}</font>
         </h1>
       </div>
     );
@@ -100,19 +164,15 @@ function OrderPage() {
             </tr>
           </thead>
           <tbody>
-            {orderData.products?.map((product) => {
+            {clientDetails.products.map((product, idx) => {
               return (
-                <tr key={product.id}>
-                  <td>{product.productName}</td>
+                <tr key={idx}>
+                  <td className="text-start font-semibold px-0 ">
+                    {product.productName}
+                  </td>
                   <td className="alignCenter">x{product.amount}</td>
-                  <td className="alignCenter">
-                    {product.itemPrice}
-                    zł
-                  </td>
-                  <td className="alignCenter">
-                    {product.totalPrice}
-                    zł
-                  </td>
+                  <td className="alignCenter">${product.itemPrice}</td>
+                  <td className="alignCenter">${product.totalPrice}</td>
                 </tr>
               );
             })}
@@ -130,21 +190,15 @@ function OrderPage() {
         </div>
         <div className="orderDetailsRow">
           <div className="orderDetailsLeft">Client name</div>
-          <div className="orderDetailsRight">
-            {orderData.client ? orderData.client.client : ""}
-          </div>
+          <div className="orderDetailsRight">{clientDetails.clientName}</div>
         </div>
         <div className="orderDetailsRow">
           <div className="orderDetailsLeft">Phone number</div>
-          <div className="orderDetailsRight">
-            {orderData.client ? orderData.client.phone : ""}
-          </div>
+          <div className="orderDetailsRight">{clientDetails.phone}</div>
         </div>
         <div className="orderDetailsRow">
           <div className="orderDetailsLeft">Additional info</div>
-          <div className="orderDetailsRight">
-            {orderData.client ? orderData.client.clientDetails : ""}
-          </div>
+          <div className="orderDetailsRight">{clientDetails.clientDetails}</div>
         </div>
       </div>
     );
@@ -156,16 +210,13 @@ function OrderPage() {
         <h3 className="summaryHeader">Added by:</h3>
         <div className="userColumnRow">
           <div className="orderDetailsLeft">
-            <p className="userInfo">
-              {orderData.order ? orderData.order.workerName : ""}
-            </p>
+            <p className="userInfo">{clientDetails.workerName}</p>
           </div>
           <div className="orderDetailsRight">
             <button
               className="editOrderButton"
               onClick={() => {
                 setButtonPopup(true);
-                setClientDetails(JSON.parse(JSON.stringify(orderData)));
                 setDeletedItems({ ids: [] });
               }}
             >
@@ -186,26 +237,18 @@ function OrderPage() {
             <h3 className="summaryHeader">Summary</h3>
           </div>
           <div className="orderDetailsRight">
-            <span
-              className={`orderStatusSummary ${
-                orderData.order ? orderData.order.status : ""
-              }`}
-            >
-              {orderData.order ? orderData.order.status : ""}
-            </span>
+            <span className={`orderStatusSummary`}>{clientDetails.status}</span>
           </div>
         </div>
         <div className="orderDetailsRow">
           <div className="orderDetailsLeft">Date</div>
           <div className="orderDetailsRight">
-            {orderData.order ? orderData.order.date.split("T")[0] : ""}
+            {supplementary.date.split("T")[0]}
           </div>
         </div>
         <div className="orderDetailsRow">
           <div className="orderDetailsLeft">Total price</div>
-          <div className="orderDetailsRight">
-            {orderData.order ? orderData.order.price : ""}
-          </div>
+          <div className="orderDetailsRight">${supplementary.total}</div>
         </div>
       </div>
     );
@@ -213,23 +256,23 @@ function OrderPage() {
 
   const OrderShippmentSection = () => {
     return (
-      <div className="orderDetails deliveryDetails">
-        <h3 className="summaryHeader">Shippment address</h3>
-        <div className="orderDetailsRow">
-          <font className="bold">Country:</font>
-          {orderData.client ? orderData.client.country : ""}
+      <div className="orderDetails ">
+        <h3 className="summaryHeader">Shippment address </h3>
+        <div className="orderDetailsRow space-x-2 flex">
+          <font className="bold">Country: </font>
+          <p>{clientDetails.country}</p>
         </div>
-        <div className="orderDetailsRow">
-          <font className="bold">City:</font>
-          {orderData.client ? orderData.client.city : ""}
+        <div className="orderDetailsRow space-x-2 flex">
+          <font className="bold">City: </font>
+          <p>{clientDetails.city}</p>
         </div>
-        <div className="orderDetailsRow">
-          <font className="bold">Postal code:</font>
-          {orderData.client ? orderData.client.postalCode : ""}
+        <div className="orderDetailsRow space-x-2 flex">
+          <font className="bold">Postal code: </font>
+          <p>{clientDetails.postalCode}</p>
         </div>
-        <div className="orderDetailsRow">
-          <font className="bold">Street, house number</font>
-          {orderData.client ? orderData.client.street : ""}
+        <div className="orderDetailsRow space-x-2 flex">
+          <font className="bold">Street, house number: </font>
+          <p>{clientDetails.street}</p>
         </div>
       </div>
     );
@@ -239,13 +282,13 @@ function OrderPage() {
     <div className="bodyWrap">
       <div className="orderPageContentWrap">
         <OrderPageHeaderSection />
-        <div className="orderPageSection">
+        <div className="orderPageSection py-2 relative box-border ">
           <div className="orderPageLeftSide">
             <ProductsSummaryTable />
             <OrderDetailsSection />
           </div>
 
-          <div className="orderPageRightSide">
+          <div className="orderPageRightSide overflow-y-scroll scrollbar-hide">
             <UserColumnSection />
             <OrderSummarySection />
             <OrderShippmentSection />
@@ -254,10 +297,10 @@ function OrderPage() {
       </div>
 
       <Popup trigger={buttonPopup} setTrigger={setButtonPopup}>
-        <div className="popupWrap">
+        <div className="popupWrap ">
           <h3>
             Edit order
-            <font className="maincolor bold">#{orderId}</font>
+            <font className="maincolor bold pl-3">#{orderId}</font>
           </h3>
           <div className="addNewOrderWrap">
             <div className="addNewOrderForm">
@@ -267,9 +310,7 @@ function OrderPage() {
                     type="text"
                     placeholder="Client name"
                     className="orderDetailsInput orderDetailsInputHalf"
-                    value={
-                      clientDetails.client ? clientDetails.client.client : ""
-                    }
+                    value={clientDetails.clientName}
                     onChange={(e) =>
                       setClientDetails({
                         ...clientDetails,
@@ -285,9 +326,7 @@ function OrderPage() {
                     type="text"
                     placeholder="Phone number"
                     className="orderDetailsInput orderDetailsInputHalf"
-                    value={
-                      clientDetails.client ? clientDetails.client.phone : ""
-                    }
+                    value={clientDetails.phone}
                     onChange={(e) =>
                       setClientDetails({
                         ...clientDetails,
@@ -305,11 +344,7 @@ function OrderPage() {
                     type="textarea"
                     placeholder="Order details"
                     className="orderDetailsInput"
-                    value={
-                      clientDetails.client
-                        ? clientDetails.client.clientDetails
-                        : ""
-                    }
+                    value={clientDetails.clientDetails}
                     onChange={(e) =>
                       setClientDetails({
                         ...clientDetails,
@@ -327,9 +362,7 @@ function OrderPage() {
                     type="text"
                     placeholder="Country"
                     className="orderDetailsInput orderDetailsInputHalf"
-                    value={
-                      clientDetails.client ? clientDetails.client.country : ""
-                    }
+                    value={clientDetails.country}
                     onChange={(e) =>
                       setClientDetails({
                         ...clientDetails,
@@ -345,9 +378,7 @@ function OrderPage() {
                     type="text"
                     placeholder="Street, home number"
                     className="orderDetailsInput orderDetailsInputHalf"
-                    value={
-                      clientDetails.client ? clientDetails.client.street : ""
-                    }
+                    value={clientDetails.street}
                     onChange={(e) =>
                       setClientDetails({
                         ...clientDetails,
@@ -365,9 +396,7 @@ function OrderPage() {
                     type="text"
                     placeholder="City"
                     className="orderDetailsInput orderDetailsInputHalf"
-                    value={
-                      clientDetails.client ? clientDetails.client.city : ""
-                    }
+                    value={clientDetails.city}
                     onChange={(e) =>
                       setClientDetails({
                         ...clientDetails,
@@ -383,11 +412,7 @@ function OrderPage() {
                     type="text"
                     placeholder="Postal code"
                     className="orderDetailsInput orderDetailsInputHalf"
-                    value={
-                      clientDetails.client
-                        ? clientDetails.client.postalCode
-                        : ""
-                    }
+                    value={clientDetails.postalCode}
                     onChange={(e) =>
                       setClientDetails({
                         ...clientDetails,
@@ -404,9 +429,7 @@ function OrderPage() {
                   <select
                     className="orderDetailsSelect"
                     placeholder="Pick status"
-                    value={
-                      clientDetails.order ? clientDetails.order.status : ""
-                    }
+                    value={clientDetails.status}
                     onChange={(e) =>
                       setClientDetails({
                         ...clientDetails,
@@ -418,9 +441,9 @@ function OrderPage() {
                     }
                     required="required"
                   >
-                    <option>Open</option>
-                    <option>Closed</option>
-                    <option>Shipped</option>
+                    <option value="paid">paid</option>
+                    <option value="pending">pending</option>
+                    <option value="shipped">Shipped</option>
                   </select>
                 </div>
               </div>
@@ -439,20 +462,46 @@ function OrderPage() {
                     </thead>
                     <tbody>
                       <tr>
-                        <td>
+                        <td className="relative">
                           <input
                             type="text"
-                            placeholder="Product name"
                             className="productDetailsInput"
                             value={productDetails.productName}
-                            onChange={(e) =>
+                            onChange={(e) => {
                               setProductDetails({
                                 ...productDetails,
                                 productName: e.target.value,
-                              })
-                            }
+                              });
+                              if (e.target.value.length > 0) {
+                                setDropdown(true);
+                                fetchPrice(e.target.value);
+                              } else {
+                                setDropdown(false);
+                              }
+                            }}
                             required="required"
                           />
+                          <ul className="flex flex-col space-y-9 translate-y-1 w-full">
+                            {dropdown &&
+                              likelyProduct?.map((name, index) => {
+                                return (
+                                  <li
+                                    key={index}
+                                    onClick={() => {
+                                      setProductDetails({
+                                        ...productDetails,
+                                        productName: name.product,
+                                      });
+                                      fetchPrice(name.product);
+                                      setDropdown(false);
+                                    }}
+                                    className="absolute top-full w-full cursor-pointer  bg-stone-200 p-1  rounded-lg"
+                                  >
+                                    {name.product}
+                                  </li>
+                                );
+                              })}
+                          </ul>
                         </td>
                         <td>
                           <input
@@ -472,35 +521,32 @@ function OrderPage() {
                         <td>
                           <input
                             type="number"
-                            placeholder="10.00"
                             className="productDetailsInput"
                             value={productDetails.itemPrice}
-                            onChange={(e) =>
+                            onChange={() => {
                               setProductDetails({
                                 ...productDetails,
-                                itemPrice: Number(e.target.value),
-                              })
-                            }
-                            required="required"
+                                itemPrice: Number(productDetails.itemPrice),
+                              });
+                            }}
                           />
                         </td>
                         <td>
                           {productDetails.itemPrice * productDetails.amount}
                         </td>
-                        <td></td>
                       </tr>
-                      {clientDetails.products?.map((product2) => {
+                      {clientDetails.products.map((product, index) => {
                         return (
-                          <tr key={product2.id}>
-                            <td>{product2.productName}</td>
-                            <td>{product2.amount}</td>
-                            <td>{product2.itemPrice}</td>
-                            <td>{product2.amount * product2.itemPrice}</td>
+                          <tr key={index}>
+                            <td>{product.productName}</td>
+                            <td>{product.amount}</td>
+                            <td>{product.itemPrice}</td>
+                            <td>{product.amount * product.itemPrice}</td>
                             <td
                               className="removeProduct"
-                              onClick={() => removeProduct(product2.id)}
+                              onClick={() => removeProduct(index)}
                             >
-                              -
+                              <RemoveRoundedIcon />
                             </td>
                           </tr>
                         );
@@ -522,6 +568,12 @@ function OrderPage() {
                       ...clientDetails,
                       products: [...clientDetails.products, productDetails],
                     });
+                    setProductDetails({
+                      productName: "",
+                      amount: 1,
+                      itemPrice: 0,
+                      totalPrice: 0,
+                    });
                   }}
                 >
                   + Add next product
@@ -534,16 +586,40 @@ function OrderPage() {
                     (a, b) => a + (b.itemPrice * b.amount || 0),
                     0
                   )}
-                  zł
+                  $
                 </span>
               </div>
             </div>
             <div className="submitNewOrder">
               <button
-                className="submitNewOrderBtn"
-                onClick={() => saveOrderChanges()}
+                className={clsx("w-full box-border rounded-xl p-2", {
+                  "bg-[#ef5f63]": clientDetails.products.length > 0,
+                  "bg-red-400/25": clientDetails.products.length < 1,
+                })}
+                disabled={clientDetails.products.length < 1}
+                onClick={() => {
+                  updateOrder();
+                  // setClientDetails({
+                  //   clientName: "",
+                  //   clientDetails: "",
+                  //   phone: "",
+                  //   country: "",
+                  //   street: "",
+                  //   city: "",
+                  //   postalCode: "",
+                  //   status: "",
+                  //   products: [],
+                  //   workerName: "",
+                  // });
+                  // setProductDetails({
+                  //   productName: "",
+                  //   amount: 1,
+                  //   itemPrice: 0,
+                  //   totalPrice: 0,
+                  // });
+                }}
               >
-                <span className="addOrderText">Save changes</span>
+                <span className="addOrderText">Save Changes</span>
               </button>
             </div>
           </div>

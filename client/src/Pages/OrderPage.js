@@ -10,12 +10,16 @@ import EditRoundedIcon from "@mui/icons-material/EditRounded";
 
 function OrderPage() {
   const { orderId } = useParams();
-  const [orderData, setOrderData] = useState([]);
   const [buttonPopup, setButtonPopup] = useState(false);
   const [dropdown, setDropdown] = useState(false);
   const [likelyProduct, setLikelyProduct] = useState([]);
   const [orderUpdated, setOrderUpdated] = useState(false);
   const [deletedItems, setDeletedItems] = useState({ ids: [] });
+  const [supplementary, setSupplementary] = useState({
+    id : "",
+    total : 0,
+    date : ""
+  });
   const [clientDetails, setClientDetails] = useState({
     clientName: "",
     clientDetails: "",
@@ -33,18 +37,10 @@ function OrderPage() {
     amount: 1,
     itemPrice: 0,
     totalPrice: 0,
+    id : "",
   });
 
   useEffect(() => {
-    const fetchAllProductsOfId = async () => {
-      const response = await axios.post(
-        "http://localhost:5000/getAllOrderOfId",
-        { orderId },
-        { withCredentials: true }
-      );
-      const result = response.data;
-      setOrderData(result);
-    };
     const fetchExistingOrderOfId = async () => {
       const response = await axios.post(
         "http://localhost:5000/fetchExistingOrderOfId",
@@ -52,6 +48,14 @@ function OrderPage() {
         { withCredentials: true }
       );
       const result = response.data;
+      setSupplementary((prev) => {
+        return{
+          ...prev,
+          id : result.client[0].client_id,
+          total : result.order[0].price,
+          date : result.client[0].clientdatecreated
+        }
+      })
       setClientDetails((prev) => {
         return {
           ...prev,
@@ -77,6 +81,7 @@ function OrderPage() {
                 amount: result.order[i].amount,
                 itemPrice: result.order[i].itemprice,
                 totalPrice: result.order[i].totalprice,
+                id: result.order[i].id,
               },
             ],
           };
@@ -84,12 +89,7 @@ function OrderPage() {
       }
     };
     fetchExistingOrderOfId();
-    fetchAllProductsOfId();
   }, []);
-
-  const updateOrder = async () => {
-    return;
-  };
 
   const fetchPrice = useDebouncedCallback(async (product) => {
     const response = await axios.post(
@@ -110,6 +110,16 @@ function OrderPage() {
     });
   }, 2000);
 
+  const updateOrder = async () => {
+    const client_id = supplementary.id
+    await axios.post(
+      "http://localhost:5000/update_order",
+      { clientDetails, orderId, client_id, deletedItems  },
+      { withCredentials: true }
+    );
+    setOrderUpdated(true);
+  };
+
   const removeProduct = (identifier) => {
     console.log(identifier);
 
@@ -125,8 +135,8 @@ function OrderPage() {
   };
 
   useEffect(() => {
-    // console.log("clienting", clientDetails);
-  }, [clientDetails]);
+    console.log(deletedItems );
+  }, [deletedItems]);
 
   const OrderPageHeaderSection = () => {
     return (
@@ -156,15 +166,15 @@ function OrderPage() {
             </tr>
           </thead>
           <tbody>
-            {orderData.map((product, idx) => {
+            {clientDetails.products.map((product, idx) => {
               return (
                 <tr key={idx}>
                   <td className="text-start font-semibold px-0 ">
-                    {product.productname}
+                    {product.productName}
                   </td>
                   <td className="alignCenter">x{product.amount}</td>
-                  <td className="alignCenter">{product.itemprice}$</td>
-                  <td className="alignCenter">{product.totalprice}$</td>
+                  <td className="alignCenter">${product.itemPrice}</td>
+                  <td className="alignCenter">${product.totalPrice}</td>
                 </tr>
               );
             })}
@@ -182,21 +192,15 @@ function OrderPage() {
         </div>
         <div className="orderDetailsRow">
           <div className="orderDetailsLeft">Client name</div>
-          <div className="orderDetailsRight">
-            {orderData[0]?.client ? orderData[0]?.client : ""}
-          </div>
+          <div className="orderDetailsRight">{clientDetails.clientName}</div>
         </div>
         <div className="orderDetailsRow">
           <div className="orderDetailsLeft">Phone number</div>
-          <div className="orderDetailsRight">
-            {orderData[0]?.client ? orderData[0]?.phone : ""}
-          </div>
+          <div className="orderDetailsRight">{clientDetails.phone}</div>
         </div>
         <div className="orderDetailsRow">
           <div className="orderDetailsLeft">Additional info</div>
-          <div className="orderDetailsRight">
-            {orderData[0]?.client ? orderData[0]?.clientdetails : ""}
-          </div>
+          <div className="orderDetailsRight">{clientDetails.clientDetails}</div>
         </div>
       </div>
     );
@@ -208,9 +212,7 @@ function OrderPage() {
         <h3 className="summaryHeader">Added by:</h3>
         <div className="userColumnRow">
           <div className="orderDetailsLeft">
-            <p className="userInfo">
-              {orderData[0]?.client ? orderData[0].workername : ""}
-            </p>
+            <p className="userInfo">{clientDetails.workerName}</p>
           </div>
           <div className="orderDetailsRight">
             <button
@@ -237,18 +239,18 @@ function OrderPage() {
             <h3 className="summaryHeader">Summary</h3>
           </div>
           <div className="orderDetailsRight">
-            <span className={`orderStatusSummary`}>{orderData[0]?.status}</span>
+            <span className={`orderStatusSummary`}>{clientDetails.status}</span>
           </div>
         </div>
         <div className="orderDetailsRow">
           <div className="orderDetailsLeft">Date</div>
           <div className="orderDetailsRight">
-            {orderData[0]?.date.split("T")[0]}
+            {supplementary.date.split("T")[0]}
           </div>
         </div>
         <div className="orderDetailsRow">
           <div className="orderDetailsLeft">Total price</div>
-          <div className="orderDetailsRight">{orderData[0]?.price}</div>
+          <div className="orderDetailsRight">${supplementary.total}</div>
         </div>
       </div>
     );
@@ -260,19 +262,19 @@ function OrderPage() {
         <h3 className="summaryHeader">Shippment address </h3>
         <div className="orderDetailsRow space-x-2 flex">
           <font className="bold">Country: </font>
-          <p>{orderData[0]?.country}</p>
+          <p>{clientDetails.country}</p>
         </div>
         <div className="orderDetailsRow space-x-2 flex">
           <font className="bold">City: </font>
-          <p>{orderData[0]?.city}</p>
+          <p>{clientDetails.city}</p>
         </div>
         <div className="orderDetailsRow space-x-2 flex">
           <font className="bold">Postal code: </font>
-          <p>{orderData[0]?.postalcode}</p>
+          <p>{clientDetails.postalCode}</p>
         </div>
         <div className="orderDetailsRow space-x-2 flex">
           <font className="bold">Street, house number: </font>
-          <p>{orderData[0]?.street}</p>
+          <p>{clientDetails.street}</p>
         </div>
       </div>
     );
@@ -297,7 +299,7 @@ function OrderPage() {
       </div>
 
       <Popup trigger={buttonPopup} setTrigger={setButtonPopup}>
-        <div className="popupWrap">
+        <div className="popupWrap ">
           <h3>
             Edit order
             <font className="maincolor bold pl-3">#{orderId}</font>
@@ -314,10 +316,7 @@ function OrderPage() {
                     onChange={(e) =>
                       setClientDetails({
                         ...clientDetails,
-                        client: {
-                          ...clientDetails.client,
-                          client: e.target.value,
-                        },
+                        clientName: e.target.value,
                       })
                     }
                     required="required"
@@ -330,10 +329,7 @@ function OrderPage() {
                     onChange={(e) =>
                       setClientDetails({
                         ...clientDetails,
-                        client: {
-                          ...clientDetails.client,
-                          phone: e.target.value,
-                        },
+                        phone: e.target.value,
                       })
                     }
                     required="required"
@@ -348,10 +344,7 @@ function OrderPage() {
                     onChange={(e) =>
                       setClientDetails({
                         ...clientDetails,
-                        client: {
-                          ...clientDetails.client,
-                          clientDetails: e.target.value,
-                        },
+                        clientDetails: e.target.value,
                       })
                     }
                     required="required"
@@ -366,10 +359,7 @@ function OrderPage() {
                     onChange={(e) =>
                       setClientDetails({
                         ...clientDetails,
-                        client: {
-                          ...clientDetails.client,
-                          country: e.target.value,
-                        },
+                        country: e.target.value,
                       })
                     }
                     required="required"
@@ -382,10 +372,7 @@ function OrderPage() {
                     onChange={(e) =>
                       setClientDetails({
                         ...clientDetails,
-                        client: {
-                          ...clientDetails.client,
-                          street: e.target.value,
-                        },
+                        street: e.target.value,
                       })
                     }
                     required="required"
@@ -400,10 +387,7 @@ function OrderPage() {
                     onChange={(e) =>
                       setClientDetails({
                         ...clientDetails,
-                        client: {
-                          ...clientDetails.client,
-                          city: e.target.value,
-                        },
+                        city: e.target.value,
                       })
                     }
                     required="required"
@@ -416,10 +400,7 @@ function OrderPage() {
                     onChange={(e) =>
                       setClientDetails({
                         ...clientDetails,
-                        client: {
-                          ...clientDetails.client,
-                          postalCode: e.target.value,
-                        },
+                        postalCode: e.target.value,
                       })
                     }
                     required="required"
@@ -433,10 +414,7 @@ function OrderPage() {
                     onChange={(e) =>
                       setClientDetails({
                         ...clientDetails,
-                        order: {
-                          ...clientDetails.order,
-                          status: e.target.value,
-                        },
+                        status: e.target.value,
                       })
                     }
                     required="required"
@@ -544,7 +522,12 @@ function OrderPage() {
                             <td>{product.amount * product.itemPrice}</td>
                             <td
                               className="removeProduct"
-                              onClick={() => removeProduct(index)}
+                              onClick={() => {
+                                removeProduct(index);
+                                setDeletedItems((prev)=>{
+                                  return{ids: [...prev.ids, product.id]}
+                                })
+                              }}
                             >
                               <RemoveRoundedIcon />
                             </td>
@@ -599,24 +582,24 @@ function OrderPage() {
                 disabled={clientDetails.products.length < 1}
                 onClick={() => {
                   updateOrder();
-                  setClientDetails({
-                    clientName: "",
-                    clientDetails: "",
-                    phone: "",
-                    country: "",
-                    street: "",
-                    city: "",
-                    postalCode: "",
-                    status: "",
-                    products: [],
-                    workerName: "",
-                  });
-                  setProductDetails({
-                    productName: "",
-                    amount: 1,
-                    itemPrice: 0,
-                    totalPrice: 0,
-                  });
+                  // setClientDetails({
+                  //   clientName: "",
+                  //   clientDetails: "",
+                  //   phone: "",
+                  //   country: "",
+                  //   street: "",
+                  //   city: "",
+                  //   postalCode: "",
+                  //   status: "",
+                  //   products: [],
+                  //   workerName: "",
+                  // });
+                  // setProductDetails({
+                  //   productName: "",
+                  //   amount: 1,
+                  //   itemPrice: 0,
+                  //   totalPrice: 0,
+                  // });
                 }}
               >
                 <span className="addOrderText">Save Changes</span>

@@ -27,15 +27,20 @@ export async function getDashboardData() {
   };
 }
 
-export async function getAllOrderOfId(orderId) {
+
+export async function fetchExistingOrderOfId(order_id) {
   try {
+    const result = await fetchClientDataRelatingToOrder(order_id);
     const response = await client.query(
-      "SELECT o.workername, o.status, o.date, o.price, c.country, c.city, c.postalcode, c.street, c.client, c.phone, c.clientdetails , p.amount, p.productname,  p.itemprice, p.totalprice FROM orders as o INNER JOIN products as p ON o.id = p.order_id INNER JOIN clients as c ON  o.client_id = c.client_id WHERE o.id = $1",
-      [orderId]
+      "SELECT  o.price, o.status, o.workername, p.productname, p.id,  p.amount, p.itemprice, p.totalprice FROM orders as o INNER JOIN products as p ON o.id = p.order_id WHERE o.id = $1",
+      [order_id]
     );
-    return response.rows;
+    return {
+      client: result,
+      order: response.rows,
+    };
   } catch (error) {
-    console.error("Failed to fetch associating products from database", error);
+    console.error("Error fetching exiting order of id", error);
   }
 }
 
@@ -50,7 +55,8 @@ export async function getAllOrders() {
   }
 }
 
-export async function addNewClient(details, account_id) {
+export async function addNewClient(details, account_id=null, client_id=null) {
+  console.log("details", details, "account_id", account_id, "client_id", client_id);
   const {
     clientName,
     clientDetails,
@@ -62,36 +68,39 @@ export async function addNewClient(details, account_id) {
     postalCode,
     status,
   } = details;
-  const result = await client.query(
-    "INSERT INTO clients(account_id, client, clientDetails, phone, country, street, city, postalCode) VALUES($1, $2, $3, $4, $5, $6, $7, $8 ) RETURNING  client_id",
-    [
-      account_id,
-      clientName,
-      clientDetails,
-      phone,
-      country,
-      street,
-      city,
-      postalCode,
-    ]
-  );
-  const id = result.rows[0].client_id;
-  addNewOrder(id, products, status);
-}
-
-export async function fetchExistingOrderOfId(order_id) {
-  try {
-    const result = await fetchClientDataRelatingToOrder(order_id);
-    const response = await client.query(
-      "SELECT  o.price, o.status, o.workername, p.productname, p.amount, p.itemprice, p.totalprice FROM orders as o INNER JOIN products as p ON o.id = p.order_id WHERE o.id = $1",
-      [order_id]
+  let result;
+  if (account_id == null && client_id) {
+    console.log("triggered")
+    result = await client.query(
+      "UPDATE clients SET client = $1, clientDetails = $2, phone = $3, country = $4, street = $5, city = $6, postalCode = $7 WHERE client_id = $8 RETURNING  client_id",
+      [
+        clientName,
+        clientDetails,
+        phone,
+        country,
+        street,
+        city,
+        postalCode,
+        client_id,
+      ]
+    ); 
+  }else if (client_id == null && account_id) {
+    result = await client.query(
+      "INSERT INTO clients(account_id, client, clientDetails, phone, country, street, city, postalCode) VALUES($1, $2, $3, $4, $5, $6, $7, $8 ) RETURNING  client_id",
+      [
+        account_id,
+        clientName,
+        clientDetails,
+        phone,
+        country,
+        street,
+        city,
+        postalCode,
+      ]
     );
-    return {
-      client: result,
-      order: response.rows,
-    };
-  } catch (error) {
-    console.error("Error fetching exiting order of id", error);
+    const id = result.rows[0].client_id;
+    console.log("triggered")
+    addNewOrder(id, products, status);
   }
 }
 
@@ -130,6 +139,29 @@ export async function addNewOrder(client_id, product, status) {
         );
       })
     );
+  } catch (error) {
+    console.error("Error adding new order", error);
+  }
+}
+
+export async function updateExistingOrder(clientDetails, orderId, clientid, deletedItems) {
+  const product = clientDetails.products;
+  const status = clientDetails.status;
+  try {
+    addNewClient(clientDetails, undefined , clientid);
+    const totalPrice = product.reduce((total, item)=> total + (item.amount * item.itemPrice), 0);
+    await client.query("UPDATE orders SET price = $1, status = $2 WHERE id = $3 RETURNING *", [totalPrice, status, orderId]);
+    for(let i=0; i< deletedItems.ids.length; i++){
+      if (deletedItems.ids[i] == null || deletedItems.ids[i] == undefined|| deletedItems.ids[i].length == ''){
+        continue
+      }
+      try {
+        await client.query("DELETE FROM products WHERE id = $1", [deletedItems.ids[i]]);
+        // Update products change tomorrow
+      } catch (error) {
+        console.error("Error adding new order", error);
+      }  
+    }
   } catch (error) {
     console.error("Error adding new order", error);
   }
