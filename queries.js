@@ -46,7 +46,7 @@ export async function fetchExistingOrderOfId(order_id) {
 export async function getAllOrders() {
   try {
     const allOrders = await client.query(
-      "SELECT c.account_id,  o.id, o.date, a.username, a.email, o.price, o.status, o.workerName FROM orders as o INNER JOIN clients as c ON o.client_id = c.client_id INNER JOIN accounts as a ON a.id = c.account_id ORDER BY o.date DESC  "
+      "SELECT c.account_id,  o.id, o.date, c.client, a.email, o.price, o.status, o.workerName FROM orders as o INNER JOIN clients as c ON o.client_id = c.client_id INNER JOIN accounts as a ON a.id = c.account_id ORDER BY o.date DESC  "
     );
     return allOrders.rows;
   } catch (error) {

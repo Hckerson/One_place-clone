@@ -599,24 +599,24 @@ function OrderPage() {
                 disabled={clientDetails.products.length < 1}
                 onClick={() => {
                   updateOrder();
-                  // setClientDetails({
-                  //   clientName: "",
-                  //   clientDetails: "",
-                  //   phone: "",
-                  //   country: "",
-                  //   street: "",
-                  //   city: "",
-                  //   postalCode: "",
-                  //   status: "",
-                  //   products: [],
-                  //   workerName: "",
-                  // });
-                  // setProductDetails({
-                  //   productName: "",
-                  //   amount: 1,
-                  //   itemPrice: 0,
-                  //   totalPrice: 0,
-                  // });
+                  setClientDetails({
+                    clientName: "",
+                    clientDetails: "",
+                    phone: "",
+                    country: "",
+                    street: "",
+                    city: "",
+                    postalCode: "",
+                    status: "",
+                    products: [],
+                    workerName: "",
+                  });
+                  setProductDetails({
+                    productName: "",
+                    amount: 1,
+                    itemPrice: 0,
+                    totalPrice: 0,
+                  });
                 }}
               >
                 <span className="addOrderText">Save Changes</span>

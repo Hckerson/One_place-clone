@@ -98,8 +98,8 @@ app.post("/register", async (req, res) => {
       return res.json({ message: "User already exists" });
     }
     const result = await client.query(
-      "INSERT INTO accounts (id ,username, password, email) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING RETURNING *",
-      [id, username, hashedPassword, email]
+      "INSERT INTO accounts (username, password, email) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING RETURNING *",
+      [username, hashedPassword, email]
     );
     const user = result.rows[0];
     req.login(user, (err) => {

@@ -22,7 +22,7 @@ function Clients() {
       setClientsData(result.data)
     }
     fetchClient()
-  })
+  },[])
 
   const handleSearchChange = (newFilteredData) => {
     setFilteredData(newFilteredData);

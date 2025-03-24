@@ -282,7 +282,7 @@ function Orders() {
                         <font className="maincolor">#</font>
                         {order.id}
                       </td>
-                      <td>{order.username}</td>
+                      <td>{order.client}</td>
                       <td>{order.date.split("T")[0]}</td>
                       <td>{order.status}</td>
                       <td>${order.price}</td>

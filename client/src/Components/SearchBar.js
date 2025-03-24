@@ -19,7 +19,7 @@ function SearchBar({ data, handleSearchChange, dataType, filters }) {
 
       if (dataType === "orders") {
         filteredData = data.filter((item) =>
-          [item.price + "", item.status, item.id, item.workername, item.username].some(
+          [item.price + "", item.status, item.id, item.workername, item.client].some(
             (r) => r?.toString().toLowerCase().includes(lowerSearch)
           )
         );
