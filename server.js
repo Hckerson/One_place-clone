@@ -187,7 +187,7 @@ app.post("/new_order", async (req, res) => {
 app.post("/update_order", async (req, res) => {
   const { clientDetails, orderId, client_id, deletedItems} = req.body;
   try {
-    updateExistingOrder(clientDetails, orderId, client_id, deletedItems)
+    await updateExistingOrder(clientDetails, orderId, client_id, deletedItems)
   } catch (error) {
     console.error("Error updating order", error);
   }

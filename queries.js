@@ -27,7 +27,6 @@ export async function getDashboardData() {
   };
 }
 
-
 export async function fetchExistingOrderOfId(order_id) {
   try {
     const result = await fetchClientDataRelatingToOrder(order_id);
@@ -55,8 +54,11 @@ export async function getAllOrders() {
   }
 }
 
-export async function addNewClient(details, account_id=null, client_id=null) {
-  console.log("details", details, "account_id", account_id, "client_id", client_id);
+export async function addNewClient(
+  details,
+  account_id = null,
+  client_id = null
+) {
   const {
     clientName,
     clientDetails,
@@ -70,7 +72,6 @@ export async function addNewClient(details, account_id=null, client_id=null) {
   } = details;
   let result;
   if (account_id == null && client_id) {
-    console.log("triggered")
     result = await client.query(
       "UPDATE clients SET client = $1, clientDetails = $2, phone = $3, country = $4, street = $5, city = $6, postalCode = $7 WHERE client_id = $8 RETURNING  client_id",
       [
@@ -83,8 +84,8 @@ export async function addNewClient(details, account_id=null, client_id=null) {
         postalCode,
         client_id,
       ]
-    ); 
-  }else if (client_id == null && account_id) {
+    );
+  } else if (client_id == null && account_id) {
     result = await client.query(
       "INSERT INTO clients(account_id, client, clientDetails, phone, country, street, city, postalCode) VALUES($1, $2, $3, $4, $5, $6, $7, $8 ) RETURNING  client_id",
       [
@@ -99,7 +100,6 @@ export async function addNewClient(details, account_id=null, client_id=null) {
       ]
     );
     const id = result.rows[0].client_id;
-    console.log("triggered")
     addNewOrder(id, products, status);
   }
 }
@@ -144,26 +144,85 @@ export async function addNewOrder(client_id, product, status) {
   }
 }
 
-export async function updateExistingOrder(clientDetails, orderId, clientid, deletedItems) {
+export async function updateExistingOrder(
+  clientDetails,
+  orderId,
+  clientid,
+  deletedItems
+) {
+  console.log(
+    "clientDetails",
+    clientDetails,
+    "orderId",
+    orderId,
+    "clientid",
+    clientid,
+    "deletedItems",
+    deletedItems
+  );
   const product = clientDetails.products;
   const status = clientDetails.status;
   try {
-    addNewClient(clientDetails, undefined , clientid);
-    const totalPrice = product.reduce((total, item)=> total + (item.amount * item.itemPrice), 0);
-    await client.query("UPDATE orders SET price = $1, status = $2 WHERE id = $3 RETURNING *", [totalPrice, status, orderId]);
-    for(let i=0; i< deletedItems.ids.length; i++){
-      if (deletedItems.ids[i] == null || deletedItems.ids[i] == undefined|| deletedItems.ids[i].length == ''){
-        continue
+    addNewClient(clientDetails, undefined, clientid);
+    const totalPrice = product.reduce(
+      (total, item) => total + item.amount * item.itemPrice,
+      0
+    );
+    await client.query(
+      "UPDATE orders SET price = $1, status = $2 WHERE id = $3 RETURNING *",
+      [totalPrice, status, orderId]
+    );
+    for (let i = 0; i < deletedItems.ids.length; i++) {
+      if (
+        deletedItems.ids[i] == null ||
+        deletedItems.ids[i] == undefined ||
+        deletedItems.ids[i].length == ""
+      ) {
+        continue;
       }
       try {
-        await client.query("DELETE FROM products WHERE id = $1", [deletedItems.ids[i]]);
-        // Update products change tomorrow
+        await client.query("DELETE FROM products WHERE id = $1", [
+          deletedItems.ids[i],
+        ]);
       } catch (error) {
         console.error("Error adding new order", error);
-      }  
+      }
+    }
+    const ids = [];
+    const response = await client.query(
+      "SELECT * FROM products WHERE order_id = $1",
+      [orderId]
+    );
+    for (let i = 0; i < response.rows.length; i++) {
+      ids.push(response.rows[i].id);
+    }
+    for (let i = 0; i < product.length; i++) {
+      if (ids.includes(product[i].id)) {
+        await client.query(
+          "UPDATE products SET productname = $1, amount = $2, itemprice = $3, totalprice = $4 WHERE id = $5",
+          [
+            product[i].productName,
+            product[i].amount,
+            product[i].itemPrice,
+            product[i].totalPrice,
+            product[i].id,
+          ]
+        );
+      } else {
+        await client.query(
+          "INSERT INTO products (order_id, productname, amount, itemprice, totalprice) VALUES ($1, $2, $3, $4, $5)",
+          [
+            orderId,
+            product[i].productName,
+            product[i].amount,
+            product[i].itemPrice,
+            (product[i].amount * product[i].itemPrice).toFixed(2),
+          ]
+        );
+      }
     }
   } catch (error) {
-    console.error("Error adding new order", error);
+    console.error("Error updating existing client details", error);
   }
 }
 
