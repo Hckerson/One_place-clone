@@ -261,7 +261,7 @@ export async function getProductPrice(product) {
 export async function getAllClientWithOrders() {
   try {
     const allClientsWithOrders = await client.query(
-      "SELECT c.client, c.clientdetails, c.phone, c.country, c.city,  c.street, c.postalcode, o.status, o.client_id  FROM orders as o INNER JOIN clients as c  ON o.client_id = c.client_id"
+      "SELECT DISTINCT c.client, c.clientdetails, c.phone, c.country, c.city,  count(o.id) AS order_count,   c.client_id  FROM clients as c LEFT JOIN orders as o  ON o.client_id = c.client_id GROUP BY c.client, c.clientdetails, c.phone, c.country, c.city,  c.client_id ORDER BY order_count DESC"
     );
     return allClientsWithOrders.rows;
   } catch (error) {

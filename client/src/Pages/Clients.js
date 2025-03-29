@@ -16,14 +16,18 @@ function Clients() {
   const [filteredData, setFilteredData] = useState([]);
   const [buttonPopup, setButtonPopup] = useState(false);
   const [filterId, setFilterId] = useState("");
-  useEffect(()=>{
-    const fetchClient = async()=>{
-      const result = await axios.get('http://localhost:5000/getAllClients')
-      setClientsData(result.data)
-    }
-    fetchClient()
-  },[])
+  useEffect(() => {
+    const fetchClient = async () => {
+      const result = await axios.get("http://localhost:5000/clients");
+      setClientsData(result.data);
+      setFilteredData(result.data)
+    };
+    fetchClient();
+  }, []);
 
+  useEffect(()=>{
+    console.log(filteredData)
+  },[filteredData])
   const handleSearchChange = (newFilteredData) => {
     setFilteredData(newFilteredData);
   };
@@ -37,8 +41,6 @@ function Clients() {
       (currentPage - 1) * itemsPerPage + itemsPerPage
     );
     const computedClientsLength = computedClients.length;
-
-
 
     return (
       <>
@@ -79,7 +81,7 @@ function Clients() {
                   <td>{client.client}</td>
                   <td>{client.phone}</td>
                   <td>{client.city}</td>
-                  <td>{client.ordersCount ? client.ordersCount : "0"}</td>
+                  <td>{client.order_count ? client.order_count : "0"}</td>
                   <td className="maincolor">
                     <Link to={`/clients/${client.client_id}`}>
                       <ReadMoreRoundedIcon />
@@ -241,6 +243,7 @@ function Clients() {
             <div className="addOrderWrap">
               <SearchBar
                 data={clientsData}
+                filters="buyer"
                 handleSearchChange={handleSearchChange}
                 dataType="clients"
               />

@@ -10,18 +10,31 @@ function SearchBar({ data, handleSearchChange, dataType, filters }) {
       const lowerSearch = searchInput.toLowerCase();
       let filteredData = [];
 
-      if (searchInput.trim() === "") {
-        handleSearchChange(
-          data.filter((item) => item.status === filters || filters === "")
-        );
-        return;
+      if (dataType === "orders") {
+        if (searchInput.trim() === "") {
+          handleSearchChange(
+            data.filter((item) => item.status === filters || filters === "")
+          );
+          return;
+        }
+      }else if (dataType === "clients") {
+        if (searchInput.trim() === "") {
+          handleSearchChange(
+            data.filter((item) => item.clientdetails.toLowerCase() === 'buyer')
+          );
+          return;
+        }
       }
 
       if (dataType === "orders") {
         filteredData = data.filter((item) =>
-          [item.price + "", item.status, item.id, item.workername, item.client].some(
-            (r) => r?.toString().toLowerCase().includes(lowerSearch)
-          )
+          [
+            item.price + "",
+            item.status,
+            item.id,
+            item.workername,
+            item.client,
+          ].some((r) => r?.toString().toLowerCase().includes(lowerSearch))
         );
       } else if (dataType === "clients") {
         filteredData = data.filter((item) =>
@@ -39,7 +52,7 @@ function SearchBar({ data, handleSearchChange, dataType, filters }) {
     };
 
     filterData();
-  }, [searchInput, data, dataType, filters, ]);
+  }, [searchInput, data, dataType, filters]);
 
   return (
     <>
