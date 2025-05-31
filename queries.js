@@ -1,14 +1,19 @@
-import pkg from "pg";
-const { Pool } = pkg;
+import pg from "pg";
+const { Pool } = pg;
 import "dotenv/config";
 
-const client = new Pool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DATABASE,
-  port: process.env.DB_PORT,
-});
+let client;
+if (process.env.PG_CONNECTION_STRING) {
+  client = new Pool({ connectionString: process.env.PG_CONNECTION_STRING });
+} else {
+  client = new Pool({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DATABASE,
+    port: process.env.DB_PORT,
+  });
+}
 
 export async function getDashboardData() {
   const clientData = await client.query("SELECT * FROM clients ");
@@ -45,22 +50,31 @@ export async function fetchExistingOrderOfId(order_id) {
 
 export async function fetchClientDetails(client_id) {
   try {
-    const clientData = await client.query('SELECT * FROM clients   WHERE client_id = $1 ', [client_id]);
-    const orderData = await client.query('SELECT * FROM orders WHERE client_id = $1', [client_id]);
-    const orders = orderData.rows
-    const productData = []
+    const clientData = await client.query(
+      "SELECT * FROM clients   WHERE client_id = $1 ",
+      [client_id]
+    );
+    const orderData = await client.query(
+      "SELECT * FROM orders WHERE client_id = $1",
+      [client_id]
+    );
+    const orders = orderData.rows;
+    const productData = [];
     for (let i = 0; i < orders.length; i++) {
-      const {id} = orders[i]
-      const product = await client.query('SELECT * FROM products WHERE order_id = $1', [id]);
-      productData.push(product.rows)
+      const { id } = orders[i];
+      const product = await client.query(
+        "SELECT * FROM products WHERE order_id = $1",
+        [id]
+      );
+      productData.push(product.rows);
     }
     return {
-      client : clientData.rows,
-      order : orderData.rows,
-      product : productData
-    }
+      client: clientData.rows,
+      order: orderData.rows,
+      product: productData,
+    };
   } catch (error) {
-    console.error('Error fetching client details', error)
+    console.error("Error fetching client details", error);
   }
 }
 
