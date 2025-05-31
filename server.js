@@ -89,6 +89,7 @@ app.post("/login", (req, res, next) => {
 });
 
 app.post("/register", async (req, res) => {
+  console.log(`Registering user with data: ${JSON.stringify(req.body)}`);
   try {
     const { username, password, email } = req.body;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
@@ -96,6 +97,7 @@ app.post("/register", async (req, res) => {
       "SELECT * FROM accounts WHERE email = $1",
       [email]
     );
+    console.log(`Checking if user exists: ${checkUser.rows.length}`);
     if (checkUser.rows.length > 0) {
       return res.json({ message: "User already exists" });
     }
