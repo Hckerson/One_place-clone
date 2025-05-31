@@ -24,7 +24,9 @@ import {
   addNewOrder,
   getAllClients,
   fetchExistingOrderOfId,
-  updateExistingOrder
+  updateExistingOrder,
+  createNewClient,
+  fetchClientDetails,
 } from "./queries.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -104,7 +106,7 @@ app.post("/register", async (req, res) => {
     const user = result.rows[0];
     req.login(user, (err) => {
       if (err) {
-        console.log("Error Registering in", err);
+        console.error("Error Registering in", err);
         res.json({ message: "error" });
       } else {
         res.json({ message: "success" });
@@ -115,7 +117,6 @@ app.post("/register", async (req, res) => {
     console.error("Error registering user", error);
   }
 });
-
 
 app.get("/orders", async (req, res) => {
   try {
@@ -135,16 +136,34 @@ app.get("/clients", async (req, res) => {
   }
 });
 
+app.post("/new_client", async (req, res) => {
+  try {
+    const { clientDetails, account_id } = req.body;
+    await createNewClient(clientDetails, account_id);
+  } catch (error) {
+    console.error("Error adding new client", error);
+  }
+});
 
-app.post("/fetchExistingOrderOfId", async (req, res)=>{
-  const {orderId} = req.body;
+app.post("/fetchExistingOrderOfId", async (req, res) => {
+  const { orderId } = req.body;
   try {
     const response = await fetchExistingOrderOfId(orderId);
     res.json(response);
   } catch (error) {
     console.error("Error fetching existing order", error);
   }
-})
+});
+
+app.post("/fetchClientDetails", async (req, res) => {
+  const { clientId } = req.body;
+  try {
+    const response = await fetchClientDetails(clientId);
+    res.json(response);
+  } catch (error) {
+    console.error("Failed to fetch existing client Data");
+  }
+});
 /*Go continue later, stopping clients to continue order page*/
 app.get("/getAllClients", async (req, res) => {
   try {
@@ -185,13 +204,13 @@ app.post("/new_order", async (req, res) => {
 });
 
 app.post("/update_order", async (req, res) => {
-  const { clientDetails, orderId, client_id, deletedItems} = req.body;
+  const { clientDetails, orderId, client_id, deletedItems } = req.body;
   try {
-    await updateExistingOrder(clientDetails, orderId, client_id, deletedItems)
+    await updateExistingOrder(clientDetails, orderId, client_id, deletedItems);
   } catch (error) {
     console.error("Error updating order", error);
   }
-})
+});
 
 app.post("/get_price", async (req, res) => {
   const { productName } = req.body;
@@ -210,10 +229,20 @@ app.get("/logout", (req, res) => {
 
 app.get("/user", (req, res) => {
   if (!req.isAuthenticated()) {
-    return
+    return;
   }
   return res.json(req.user);
 });
 
-const port = 5000;
+// Serve static files from React app in production
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "client", "build")));
+
+  app.get("*", (req, res) => {
+    // If the request doesn't match an API route, serve React's index.html
+    res.sendFile(path.join(__dirname, "client", "build", "index.html"));
+  });
+}
+
+const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server running on port ${port}`));

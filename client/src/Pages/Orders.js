@@ -77,7 +77,7 @@ function Orders() {
     fetchClientData();
   }, []);
 
-  useEffect(() => {}, [ordersData, displaySearch]);
+  useEffect(() => {console.log(ordersData)}, [ordersData, displaySearch]);
 
   const decideStatus = (orders) => {
     if (orders.length < 1) {

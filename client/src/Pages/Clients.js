@@ -20,14 +20,13 @@ function Clients() {
     const fetchClient = async () => {
       const result = await axios.get("http://localhost:5000/clients");
       setClientsData(result.data);
-      setFilteredData(result.data)
+      setFilteredData(result.data);
     };
     fetchClient();
   }, []);
 
-  useEffect(()=>{
-    console.log(filteredData)
-  },[filteredData])
+  useEffect(() => {
+  }, [filteredData]);
   const handleSearchChange = (newFilteredData) => {
     setFilteredData(newFilteredData);
   };
@@ -101,12 +100,23 @@ function Clients() {
       clientName: "",
       clientDetails: "",
       phone: "",
-      country: "Polska",
+      country: "",
       street: "",
       city: "",
       postalCode: "",
       workerName: ctx.username,
     });
+    const createNewClient = async () => {
+      try {
+        const response = axios.post(
+          "http://localhost:5000/new_client",
+          { clientDetails, account_id: ctx.id },
+          { withCredentials: true }
+        );
+      } catch (error) {
+        console.error("Error creating client", error);
+      }
+    };
 
     return (
       <Popup trigger={buttonPopup} setTrigger={setButtonPopup}>
@@ -225,7 +235,24 @@ function Clients() {
             <div className="submitNewOrder">
               <button className="submitNewOrderBtn">
                 <AddCircleOutlineRoundedIcon />
-                <span className="addOrderText">Add</span>
+                <span
+                  className="addOrderText"
+                  onClick={() => {
+                    createNewClient();
+                    setClientDetails({
+                      clientName: "",
+                      clientDetails: "",
+                      phone: "",
+                      country: "",
+                      street: "",
+                      city: "",
+                      postalCode: "",
+                      workerName: ctx.username,
+                    });
+                  }}
+                >
+                  Add
+                </span>
               </button>
             </div>
           </div>

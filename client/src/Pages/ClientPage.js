@@ -12,52 +12,33 @@ function ClientPage() {
   const [buttonPopup, setButtonPopup] = useState(false);
   const [clientUpdated, setClientUpdated] = useState(false);
 
-  const [clientDetails, setClientDetails] = useState({});
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await axios.post(
+        "http://localhost:5000/fetchClientDetails",
+        { clientId },
+        { withCredentials: true }
+      );
+      setClientData(response.data);
+    };
+    fetchData();
+  }, [clientId]);
 
   useEffect(() => {
-    axios
-      .get(`http://localhost:5000/client_by_id?id=${clientId}`, {
-        withCredentials: true,
-      })
-      .then((res) => {
-        if (res.data != null) {
-          setClientUpdated(false);
-          setClientData({
-            client: res.data[0],
-            orders: res.data[1],
-            products: res.data[2],
-          });
-        }
-      });
-  }, [clientUpdated]);
-
-  const saveOrderChanges = () => {
-    axios
-      .post(
-        "http://localhost:5000/updateclient",
-        {
-          clientDetails,
-        },
-        { withCredentials: true }
-      )
-      .then((res) => {
-        if (res.data === "success") {
-          setClientUpdated(true);
-        }
-      });
-  };
+    console.log(clientData);
+  }, [clientData]);
 
   const ClientInfo = () => {
     return (
-      <div>
+      <div className="overflow-y-auto  h-full relative">
         <div className="clientPageHeader">
           <h1>
             Client
             <font className="maincolor">#{clientId}</font>
           </h1>
-          <h3>{clientData.client ? clientData.client.client : ""}</h3>
+          <h3>{clientData.client && clientData.client[0]?.client}</h3>
         </div>
-        <div className="clientInfo">
+        <div className="clientInfo ">
           <div className="clientContactInfo">
             <span>Contant info</span>
             <div className="clientInfoGroup">
@@ -67,13 +48,13 @@ function ClientPage() {
             <div className="clientInfoGroup">
               <div className="clientInfoLabel">Phone number</div>
               <div className="clientInfoText">
-                {clientData.client ? clientData.client.phone : ""}
+                {clientData.client && clientData.client[0]?.phone}
               </div>
             </div>
             <div className="clientInfoGroup">
               <div className="clientInfoLabel">Client details</div>
               <div className="clientInfoText">
-                {clientData.client ? clientData.client.clientDetails : ""}
+                {clientData.client && clientData.client[0]?.clientdetails}
               </div>
             </div>
           </div>
@@ -83,25 +64,25 @@ function ClientPage() {
             <div className="clientInfoGroup">
               <div className="clientInfoLabel">Country</div>
               <div className="clientInfoText">
-                {clientData.client ? clientData.client.country : ""}
+                {clientData.client && clientData.client[0]?.country}
               </div>
             </div>
             <div className="clientInfoGroup">
               <div className="clientInfoLabel">City</div>
               <div className="clientInfoText">
-                {clientData.client ? clientData.client.city : ""}
+                {clientData.client && clientData.client[0]?.city}
               </div>
             </div>
             <div className="clientInfoGroup">
               <div className="clientInfoLabel">Postal code</div>
               <div className="clientInfoText">
-                {clientData.client ? clientData.client.postalCode : ""}
+                {clientData.client && clientData.client[0]?.postalcode}
               </div>
             </div>
             <div className="clientInfoGroup">
               <div className="clientInfoLabel">Street</div>
               <div className="clientInfoText">
-                {clientData.client ? clientData.client.street : ""}
+                {clientData.client && clientData.client[0]?.street}
               </div>
             </div>
           </div>
@@ -112,33 +93,29 @@ function ClientPage() {
 
   const ClientOrders = () => {
     return (
-      <div className="clientOrdersWrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Order id</th>
-              <th>Date</th>
-              <th>Status</th>
-              <th>Price</th>
-              <th></th>
+      <div className="relative">
+        <table className="w-full box-border">
+          <thead className="w-full box-border">
+            <tr className="flex  w-full  ">
+              <th className="w-2/5 text-start">Order id</th>
+              <th className="text-start flex-1">Date</th>
+              <th className="text-start flex-1">Status</th>
+              <th className="text-start flex-1">Price</th>
             </tr>
           </thead>
-          <tbody>
-            {clientData.orders
+          <tbody className="w-full">
+            {clientData?.order
               ?.map((order) => {
                 return (
-                  <tr key={order.id}>
-                    <td>
+                  <tr key={order.id} className="flex  w-full">
+                    <td className="w-2/5">
                       <font className="maincolor">#</font>
                       {order.id}
                     </td>
-                    <td>{order.date.split("T")[0]}</td>
-                    <td className={order.status}>{order.status}</td>
-                    <td>
-                      {order.price}
-                      zł
-                    </td>
-                    <td className="maincolor">
+                    <td className="flex-1">{order.date.split("T")[0]}</td>
+                    <td className={`${order.status} flex-1`}>{order.status}</td>
+                    <td className="flex-1">$ {order.price}</td>
+                    <td className="maincolor absolute -right-4     bg-red-200">
                       <Link to={`/orders/${order.id}`}>
                         <ReadMoreRoundedIcon />
                       </Link>
@@ -164,10 +141,10 @@ function ClientPage() {
             <p>
               Client orders sum:
               <font className="maincolor">
-                {clientData.orders
-                  ? clientData.orders.reduce((a, b) => a + (b.price || 0), 0)
-                  : "0"}
-                zł
+                ${" "}
+                {clientData?.order?.reduce((total, item) => {
+                  return total + parseInt(item.price);
+                }, 0)}
               </font>
             </p>
           </div>

@@ -31,10 +31,6 @@ CREATE TABLE accounts (
 --
 -- Dumping data for table accounts
 --
-
-INSERT INTO accounts (id, username, password, role, dateCreated) VALUES
-(1, 'admin', '$2b$10$J1JTnk4KtLylMznNjWlRsOKPvsDEYDX.xyP77EY/Gq1JpccSnr3qa', 'admin', '2022-10-25');
-
 --
 -- Table structure for table calendar
 --
@@ -66,16 +62,6 @@ CREATE TABLE clients (
   postalCode TEXT,
   clientDateCreated DATE DEFAULT CURRENT_DATE
 );
-
-a51966dc-8f87-4d9a-ae08-a164d8a6266c
-  
---
--- Table structure for table orders
---
-INSERT INTO orders (client_id, date, price, status, workername)
-VALUES 
-    ('c95bcac7-1cfe-4df9-be6a-5109e4208ece', '2025-01-27 14:30:00', 500000, 'Completed', 'Drex'),
-    ('781487a5-cfb6-46e6-8f72-3ccded3544e9', '2025-02-01 18:30:00', 200000, 'Pending', 'Mayor');
 
 
 

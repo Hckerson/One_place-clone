@@ -43,6 +43,27 @@ export async function fetchExistingOrderOfId(order_id) {
   }
 }
 
+export async function fetchClientDetails(client_id) {
+  try {
+    const clientData = await client.query('SELECT * FROM clients   WHERE client_id = $1 ', [client_id]);
+    const orderData = await client.query('SELECT * FROM orders WHERE client_id = $1', [client_id]);
+    const orders = orderData.rows
+    const productData = []
+    for (let i = 0; i < orders.length; i++) {
+      const {id} = orders[i]
+      const product = await client.query('SELECT * FROM products WHERE order_id = $1', [id]);
+      productData.push(product.rows)
+    }
+    return {
+      client : clientData.rows,
+      order : orderData.rows,
+      product : productData
+    }
+  } catch (error) {
+    console.error('Error fetching client details', error)
+  }
+}
+
 export async function getAllOrders() {
   try {
     const allOrders = await client.query(
@@ -104,6 +125,26 @@ export async function addNewClient(
   }
 }
 
+export async function createNewClient(clientDetails, account_id) {
+  try {
+    const result = await client.query(
+      "INSERT INTO clients (account_id, client, clientdetails, phone, country, street, city, postalCode) VALUES($1, $2, $3, $4, $5, $6, $7, $8)",
+      [
+        account_id,
+        clientDetails.clientName,
+        clientDetails.clientDetails,
+        clientDetails.phone,
+        clientDetails.country,
+        clientDetails.street,
+        clientDetails.city,
+        clientDetails.postalCode,
+      ]
+    );
+  } catch (error) {
+    console.error("Error creating new client", error);
+  }
+}
+
 export async function fetchClientDataRelatingToOrder(order_id) {
   try {
     const response = await client.query(
@@ -150,16 +191,6 @@ export async function updateExistingOrder(
   clientid,
   deletedItems
 ) {
-  console.log(
-    "clientDetails",
-    clientDetails,
-    "orderId",
-    orderId,
-    "clientid",
-    clientid,
-    "deletedItems",
-    deletedItems
-  );
   const product = clientDetails.products;
   const status = clientDetails.status;
   try {
