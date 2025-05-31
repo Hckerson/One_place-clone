@@ -1,12 +1,11 @@
-import "dotenv/config";
 import express from "express";
 import bodyParser from "body-parser";
 import { initializer } from "./passport-config.js";
 import passport from "passport";
 import bcrypt from "bcryptjs";
 import cors from "cors";
-import pkg from "pg";
-const { Pool } = pkg;
+import pg from "pg";
+const { Pool } = pg;
 import path from "path";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
@@ -34,13 +33,18 @@ const app = express();
 
 import {} from "./queries.js";
 
-var client = new Pool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DATABASE,
-  port: process.env.DB_PORT,
-});
+let client;
+if (process.env.PG_CONNECTION_STRING) {
+  client = new Pool({ connectionString: process.env.PG_CONNECTION_STRING });
+} else {
+  client = new Pool({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DATABASE,
+    port: process.env.DB_PORT,
+  });
+}
 
 // // CONFIGURING OPTIONS
 const corsOptions = {
