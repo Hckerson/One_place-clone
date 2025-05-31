@@ -82,7 +82,9 @@ function CalendarEvents() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/events", { withCredentials: true })
+      .get("https://one-place-clone.onrender.com/events", {
+        withCredentials: true,
+      })
       .then((res) => {
         if (res.data != null) {
           setNewEventSubmitted(false);
@@ -94,7 +96,7 @@ function CalendarEvents() {
   const addNewEvent = (eventData) => {
     axios
       .post(
-        "http://localhost:5000/newevent",
+        "https://one-place-clone.onrender.com/newevent",
         {
           eventData,
         },

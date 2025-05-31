@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import "./Styles/login.css";
-import clsx from  'clsx' 
+import clsx from "clsx";
 
 export default function Register() {
   const [username, setUsername] = useState("");
@@ -10,33 +10,33 @@ export default function Register() {
   const [email, setEmail] = useState("");
 
   const register = async () => {
-    setEmail('')
-    setUsername('')
-    setPassword('')
+    setEmail("");
+    setUsername("");
+    setPassword("");
     try {
       const response = await axios.post(
-        "http://localhost:5000/register",
+        "https://one-place-clone.onrender.com/register",
         { username, password, email },
         { withCredentials: true }
       );
-      console.log(response.data)
+      console.log(response.data);
       if (response.data.message === "success") {
-        window.location.href = '/'
-      }else if(response.data.message === "User already exists") {
-        setEmail('User already exists')
-        setExist(true)
-        const id =setTimeout(() => {
-          setExist(false)
-          setEmail('')
+        window.location.href = "/";
+      } else if (response.data.message === "User already exists") {
+        setEmail("User already exists");
+        setExist(true);
+        const id = setTimeout(() => {
+          setExist(false);
+          setEmail("");
         }, 3000);
 
-        return () => clearTimeout(id)
-      }else{
-        window.location.href = '/register'
+        return () => clearTimeout(id);
+      } else {
+        window.location.href = "/register";
       }
     } catch (error) {
       console.log("Error  registering  ", error);
-    } 
+    }
   };
 
   return (
@@ -49,7 +49,7 @@ export default function Register() {
               <input
                 type="text"
                 className="input"
-                name = "email"
+                name="email"
                 value={email}
                 autoComplete="email"
                 onChange={(e) => setEmail(e.target.value)}
@@ -66,7 +66,7 @@ export default function Register() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required="required"
-                name='username'
+                name="username"
               />
               <label className={`${username.length > 0 ? "focusLabel" : ""}`}>
                 Username
@@ -79,7 +79,7 @@ export default function Register() {
                 onChange={(e) => setPassword(e.target.value)}
                 required="required"
                 value={password}
-                name = 'password'
+                name="password"
               />
               <label className={`${password.length > 0 ? "focusLabel" : ""}`}>
                 Password
@@ -97,7 +97,10 @@ export default function Register() {
       </div>
       <a
         href="/login"
-        className={clsx('absolute right-5 bottom-5 rounded-lg bg-stone-200 px-3 py-1 font-semibold underline underline-offset-2 decoration-black decoration-1 hover:decoration-stone-200  duration-200 ease-in-out animate__animated transition-all', exist && 'animate__bounce' )}
+        className={clsx(
+          "absolute right-5 bottom-5 rounded-lg bg-stone-200 px-3 py-1 font-semibold underline underline-offset-2 decoration-black decoration-1 hover:decoration-stone-200  duration-200 ease-in-out animate__animated transition-all",
+          exist && "animate__bounce"
+        )}
       >
         <span className="text-sm font-normal">Already have an account?</span>
         Login

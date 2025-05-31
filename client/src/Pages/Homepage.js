@@ -23,9 +23,12 @@ function Homepage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const result = await axios.get("http://localhost:5000/dashboard_data", {
-        withCredentials: true,
-      });
+      const result = await axios.get(
+        "https://one-place-clone.onrender.com/dashboard_data",
+        {
+          withCredentials: true,
+        }
+      );
       if (result.data) {
         setDashboardData({ ...result.data });
       }
@@ -51,7 +54,7 @@ function Homepage() {
     const calendarDataFiltered = dashboardData?.calendar?.filter((item) => {
       const dateItem = item.deadlinedate.split("T")[0];
       const dateToCompare = new Date(dateItem).getTime();
-      return changedDate < dateToCompare 
+      return changedDate < dateToCompare;
     });
     const orderDataFiltered = dashboardData?.order?.filter((item) => {
       const dateItem = item.date.split("T")[0];
@@ -59,16 +62,16 @@ function Homepage() {
       return changedDate < dateToCompare && dateToCompare < todaysDate;
     });
 
-    const clientDataFiletered = dashboardData?.client?.filter((client)=>{
+    const clientDataFiletered = dashboardData?.client?.filter((client) => {
       const dateItem = client.clientdatecreated.split("T")[0];
       const dateToCompare = new Date(dateItem).getTime();
       return changedDate < dateToCompare && dateToCompare < todaysDate;
     });
 
-    const getTotalClient = () =>{
+    const getTotalClient = () => {
       if (!clientDataFiletered?.length) return 0;
-      return clientDataFiletered?.length
-    }
+      return clientDataFiletered?.length;
+    };
     const getTotalSumOfRange = () => {
       if (!orderDataFiltered?.length) return 0;
       const totalPriceFiltered = orderDataFiltered.reduce((total, item) => {
@@ -125,7 +128,7 @@ function Homepage() {
       return upcomingEventsExist ? (
         calendarDataFiltered?.slice(0, 1).map((event) => {
           let dateText = upcomingEventDateText(event.deadlinedate);
-          const hours = event.hours.split('.')[0]
+          const hours = event.hours.split(".")[0];
           return (
             <div className="upcomingEventWrap" key={event.id}>
               <div className="upcomingEventDate">
@@ -219,7 +222,9 @@ function Homepage() {
 
             <div className="topPanelDataSummary">
               <p>New clients</p>
-              <h3 className="maincolor topPanelDataText">{getTotalClient()} </h3>
+              <h3 className="maincolor topPanelDataText">
+                {getTotalClient()}{" "}
+              </h3>
             </div>
 
             <div className="topPanelSeperator"></div>

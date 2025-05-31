@@ -21,7 +21,9 @@ function UsersSetting() {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:5000/getusers`, { withCredentials: true })
+      .get(`https://one-place-clone.onrender.com/getusers`, {
+        withCredentials: true,
+      })
       .then((res) => {
         if (res.data != null) {
           setUsersUpdated(false);
@@ -40,7 +42,7 @@ function UsersSetting() {
   const deleteUserById = (userId) => {
     axios
       .post(
-        "http://localhost:5000/deleteuser",
+        "https://one-place-clone.onrender.com/deleteuser",
         {
           userId,
         },
@@ -207,7 +209,7 @@ function UsersSetting() {
     const addNewUser = () => {
       axios
         .post(
-          "http://localhost:5000/newuser",
+          "https://one-place-clone.onrender.com/newuser",
           {
             userDetails,
           },

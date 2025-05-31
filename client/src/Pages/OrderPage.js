@@ -16,9 +16,9 @@ function OrderPage() {
   const [orderUpdated, setOrderUpdated] = useState(false);
   const [deletedItems, setDeletedItems] = useState({ ids: [] });
   const [supplementary, setSupplementary] = useState({
-    id : "",
-    total : 0,
-    date : ""
+    id: "",
+    total: 0,
+    date: "",
   });
   const [clientDetails, setClientDetails] = useState({
     clientName: "",
@@ -37,25 +37,25 @@ function OrderPage() {
     amount: 1,
     itemPrice: 0,
     totalPrice: 0,
-    id : "",
+    id: "",
   });
 
   useEffect(() => {
     const fetchExistingOrderOfId = async () => {
       const response = await axios.post(
-        "http://localhost:5000/fetchExistingOrderOfId",
+        "https://one-place-clone.onrender.com/fetchExistingOrderOfId",
         { orderId },
         { withCredentials: true }
       );
       const result = response.data;
       setSupplementary((prev) => {
-        return{
+        return {
           ...prev,
-          id : result.client[0].client_id,
-          total : result.order[0].price,
-          date : result.client[0].clientdatecreated
-        }
-      })
+          id: result.client[0].client_id,
+          total: result.order[0].price,
+          date: result.client[0].clientdatecreated,
+        };
+      });
       setClientDetails((prev) => {
         return {
           ...prev,
@@ -93,7 +93,7 @@ function OrderPage() {
 
   const fetchPrice = useDebouncedCallback(async (product) => {
     const response = await axios.post(
-      "http://localhost:5000/get_price",
+      "https://one-place-clone.onrender.com/get_price",
       { productName: product },
       { withCredentials: true }
     );
@@ -111,10 +111,10 @@ function OrderPage() {
   }, 2000);
 
   const updateOrder = async () => {
-    const client_id = supplementary.id
+    const client_id = supplementary.id;
     await axios.post(
-      "http://localhost:5000/update_order",
-      { clientDetails, orderId, client_id, deletedItems  },
+      "https://one-place-clone.onrender.com/update_order",
+      { clientDetails, orderId, client_id, deletedItems },
       { withCredentials: true }
     );
     setOrderUpdated(true);
@@ -135,7 +135,7 @@ function OrderPage() {
   };
 
   useEffect(() => {
-    console.log(deletedItems );
+    console.log(deletedItems);
   }, [deletedItems]);
 
   const OrderPageHeaderSection = () => {
@@ -524,9 +524,9 @@ function OrderPage() {
                               className="removeProduct"
                               onClick={() => {
                                 removeProduct(index);
-                                setDeletedItems((prev)=>{
-                                  return{ids: [...prev.ids, product.id]}
-                                })
+                                setDeletedItems((prev) => {
+                                  return { ids: [...prev.ids, product.id] };
+                                });
                               }}
                             >
                               <RemoveRoundedIcon />

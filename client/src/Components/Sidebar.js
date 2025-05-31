@@ -10,7 +10,7 @@ import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 
 const logout = async () => {
   // axios
-  //   .get("http://localhost:5000/logout", {
+  //   .get("https://one-place-clone.onrender.com/logout", {
   //     withCredentials: true,
   //   })
   //   .then((res) => {
@@ -19,12 +19,15 @@ const logout = async () => {
   //     }
   //   });
   try {
-    const response = await axios.get('http://localhost:5000/logout', {withCredentials : true})
+    const response = await axios.get(
+      "https://one-place-clone.onrender.com/logout",
+      { withCredentials: true }
+    );
     if (response.data.message === "success") {
       window.location.href = "/login";
     }
   } catch (error) {
-    console.error('Error logging out', error)
+    console.error("Error logging out", error);
   }
 };
 

@@ -7,16 +7,19 @@ export function AuthLogin(props) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const user = await axios.get("http://localhost:5000/user", {
-          withCredentials: true,
-        });
+        const user = await axios.get(
+          "https://one-place-clone.onrender.com/user",
+          {
+            withCredentials: true,
+          }
+        );
         const response = user.data;
         setUser(response);
       } catch (error) {
         console.log("Error fetching user");
       }
     };
-    fetchData()
+    fetchData();
   }, []);
   return (
     <AuthLoginInfo.Provider value={user}>

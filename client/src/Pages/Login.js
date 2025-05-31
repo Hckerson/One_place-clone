@@ -10,7 +10,7 @@ export default function Login() {
   const login = async () => {
     try {
       const response = await axios.post(
-        "http://localhost:5000/login",
+        "https://one-place-clone.onrender.com/login",
         { username, password },
         { withCredentials: true }
       );
@@ -56,7 +56,11 @@ export default function Login() {
               </label>
             </div>
             <button onClick={login}>Login</button>
-            {<div className="correspondent font-medium text-sm mt-2 text-red-500">{correspondent}</div>}
+            {
+              <div className="correspondent font-medium text-sm mt-2 text-red-500">
+                {correspondent}
+              </div>
+            }
           </div>
         </div>
         <div className="infoSide">

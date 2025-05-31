@@ -15,7 +15,7 @@ function ClientPage() {
   useEffect(() => {
     const fetchData = async () => {
       const response = await axios.post(
-        "http://localhost:5000/fetchClientDetails",
+        "https://one-place-clone.onrender.com/fetchClientDetails",
         { clientId },
         { withCredentials: true }
       );

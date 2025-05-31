@@ -52,9 +52,12 @@ function Orders() {
   useEffect(() => {
     setNewOrderSubmitted(false);
     const fetchOrders = async () => {
-      const response = await axios.get("http://localhost:5000/orders", {
-        withCredentials: true,
-      });
+      const response = await axios.get(
+        "https://one-place-clone.onrender.com/orders",
+        {
+          withCredentials: true,
+        }
+      );
       const result = response.data;
       setOrdersData(result);
       setFilteredData(result);
@@ -68,16 +71,21 @@ function Orders() {
 
   useEffect(() => {
     const fetchClientData = async () => {
-      const response = await axios.get("http://localhost:5000/clients", {
-        withCredentials: true,
-      });
+      const response = await axios.get(
+        "https://one-place-clone.onrender.com/clients",
+        {
+          withCredentials: true,
+        }
+      );
       const result = response.data;
       setAllClientsData(result);
     };
     fetchClientData();
   }, []);
 
-  useEffect(() => {console.log(ordersData)}, [ordersData, displaySearch]);
+  useEffect(() => {
+    console.log(ordersData);
+  }, [ordersData, displaySearch]);
 
   const decideStatus = (orders) => {
     if (orders.length < 1) {
@@ -117,7 +125,7 @@ function Orders() {
 
   const addNewOrder = async () => {
     const response = await axios.post(
-      "http://localhost:5000/new_order",
+      "https://one-place-clone.onrender.com/new_order",
       { clientDetails, isNewClient, oldClientId },
       { withCredentials: true }
     );
@@ -129,7 +137,7 @@ function Orders() {
 
   const fetchPrice = useDebouncedCallback(async (product) => {
     const response = await axios.post(
-      "http://localhost:5000/get_price",
+      "https://one-place-clone.onrender.com/get_price",
       { productName: product },
       { withCredentials: true }
     );

@@ -18,15 +18,16 @@ function Clients() {
   const [filterId, setFilterId] = useState("");
   useEffect(() => {
     const fetchClient = async () => {
-      const result = await axios.get("http://localhost:5000/clients");
+      const result = await axios.get(
+        "https://one-place-clone.onrender.com/clients"
+      );
       setClientsData(result.data);
       setFilteredData(result.data);
     };
     fetchClient();
   }, []);
 
-  useEffect(() => {
-  }, [filteredData]);
+  useEffect(() => {}, [filteredData]);
   const handleSearchChange = (newFilteredData) => {
     setFilteredData(newFilteredData);
   };
@@ -109,7 +110,7 @@ function Clients() {
     const createNewClient = async () => {
       try {
         const response = axios.post(
-          "http://localhost:5000/new_client",
+          "https://one-place-clone.onrender.com/new_client",
           { clientDetails, account_id: ctx.id },
           { withCredentials: true }
         );
